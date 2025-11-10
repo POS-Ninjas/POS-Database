@@ -30,12 +30,12 @@ CREATE TABLE users (
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     email TEXT UNIQUE,
-    role_id INTEGER NOT NULL,
+    role_name TEXT NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
     last_login DATETIME NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (role_id) REFERENCES roles(role_id)
+    FOREIGN KEY (role_name) REFERENCES roles(role_name)
 );
 
 CREATE INDEX idx_username   ON users (username);
@@ -200,7 +200,7 @@ CREATE TRIGGER update_sales_timestamp
 AFTER UPDATE ON sales
 FOR EACH ROW
 BEGIN
-  UPDATE sales SET updated_at = CURRENT_TIMESTAMP WHERE sales_id = OLD.sales_id;
+  UPDATE sales SET updated_at = CURRENT_TIMESTAMP WHERE sale_id = OLD.sale_id;
 END;
 
 CREATE TABLE sale_items (
@@ -312,7 +312,7 @@ CREATE TABLE payments (
     amount REAL NOT NULL,
     payment_method TEXT NOT NULL CHECK(payment_method IN ('cash', 'momo', 'card', 'bank_transfer', 'cheque')) DEFAULT 'cash',
     payment_reference TEXT, -- Bank/Momo reference number
-    momo_provider TEXT NOT NULL CHECK(momo_provider IN ('mtn', 'vodafone', 'airteltigo', NULL)), -- For Ghana Mobile Money
+    momo_provider TEXT NOT NULL CHECK(momo_provider IS NULL OR momo_provider IN ('mtn', 'vodafone', 'airteltigo')), -- For Ghana Mobile Money
     momo_number TEXT,
     notes TEXT,
     processed_by INTEGER NOT NULL, -- User who processed payment
@@ -321,10 +321,9 @@ CREATE TABLE payments (
 );
 
 CREATE INDEX idx_transaction_type ON payments (transaction_type);
-CREATE INDEX idx_reference ON payments (reference_id);
-CREATE INDEX idx_payment_date ON payments (payment_date);
-CREATE INDEX idx_payments_method ON payments (payment_method);
-
+CREATE INDEX idx_reference        ON payments (reference_id);
+CREATE INDEX idx_payment_date     ON payments (payment_date);
+CREATE INDEX idx_payments_method  ON payments (payment_method);
 
 -- ============================================
 -- AUDIT & REPORTS

@@ -1,0 +1,10 @@
+[project]
+name = "pos-database-with-fake-data"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "bcrypt>=5.0.0",
+    "faker>=37.12.0",
+]
