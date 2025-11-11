@@ -34,8 +34,8 @@ CREATE TABLE users (
     is_active BOOLEAN DEFAULT TRUE,
     last_login DATETIME NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (role_name) REFERENCES roles(role_name)
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    -- FOREIGN KEY (role_name) REFERENCES roles(role_name)
 );
 
 CREATE INDEX idx_username   ON users (username);
