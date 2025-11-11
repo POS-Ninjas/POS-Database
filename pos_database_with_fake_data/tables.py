@@ -33,3 +33,5 @@ class User:
     last_login: datetime
     created_at: str
     updated_at: str
+
+
