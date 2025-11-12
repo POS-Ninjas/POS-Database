@@ -8,7 +8,7 @@ import sqlite3
 class DatabaseContext:
     db_path = Path('/home/test/Desktop/pos/POS-Database') / 'test.db'
     conn: Optional[sqlite3.Connection] = field(default=None, init=False)
-    cursor: Optional[sqlite3.Cursor] = field(default=None, init=False)
+    cursor: Optional[sqlite3.Cursor]   = field(default=None, init=False)
 
     def __enter__(self):
         self.conn = sqlite3.connect(self.db_path)

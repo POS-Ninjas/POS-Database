@@ -1,4 +1,4 @@
-from db import create_data_for_users, read_users_data, delete_users_data, UserRepository
+from db import *
 from db_context import DatabaseContext
 import sqlite3
 from pathlib import Path
@@ -30,15 +30,14 @@ def read_data():
 
         product_repo.populate_user_table_with_fake_data(100)
 
-        # all_users = product_repo.read_users_data()
+        # all_users = product_repo.get_all_users()
     
         # for user in all_users:
         #     print(user)
 
-        # print(product_repo.read_single_user_data())
+        print(product_repo.get_single_user())
 
-        # print(product_repo.delete_users_data())
-
+        print(product_repo.delete_all_users())
 
 def main():
     print("Hello from pos-database-with-fake-data!")

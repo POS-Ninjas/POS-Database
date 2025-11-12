@@ -60,14 +60,14 @@ CREATE TABLE clients (
     phone_number TEXT NOT NULL,
     email TEXT NOT NULL,
     tin TEXT, -- Tax Identification Number (Ghana format: 11 digits) - Use TEXT for leading zeros
-    client_type TEXT NOT NULL CHECK(client_type IN ('customer', 'business')) DEFAULT 'individual',
+    client_type TEXT NOT NULL CHECK(client_type IN ('customer', 'business')) DEFAULT 'customer',
     business_name TEXT NOT NULL,
     business_address TEXT,
     business_type TEXT NOT NULL CHECK(business_type IN ('customer', 'supplier', 'export')) DEFAULT 'customer',
     is_active BOOLEAN DEFAULT TRUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    deleted_at DATETIME NULL -- Soft delete
+    deleted_at DATETIME -- Soft delete
 );
 
 CREATE INDEX idx_client_phone  ON clients (phone_number);

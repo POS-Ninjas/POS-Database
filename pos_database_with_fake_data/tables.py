@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import datetime
 
 @dataclass
-class Roles:
+class Role:
     role_id: int
     role_name: str
     role_description: str | None
@@ -24,18 +24,18 @@ class User:
     created_at: datetime
     updated_at: datetime
 
-
 @dataclass
-class Customer:
-    customer_id: int
+class Client:
+    client_id: int
     first_name: str
     last_name: str
-    business_name: str | None
     phone_number: str | None
-    email:  str
+    email: str
     tin: str 
-    address: str
-    customer_type: str
+    client_type: str
+    business_name: str | None
+    business_address: str
+    business_type: str
     is_active: bool
     created_at: datetime
     updated_at: datetime
@@ -44,6 +44,3 @@ class Customer:
 @dataclass
 class Category:
     supplier_id: int
-
-
-
