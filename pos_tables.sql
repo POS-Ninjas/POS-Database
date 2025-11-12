@@ -9,7 +9,7 @@
 
 CREATE TABLE roles (
     role_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    role_name TEXT NOT NULL UNIQUE,
+    role_name TEXT NOT NULL UNIQUE, -- Staff and Admin
     role_description TEXT,
     permissions TEXT, -- Store JSON as text: e.g. '["view_sales", "create_products", "manage_users"]'
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -40,6 +40,7 @@ CREATE TABLE users (
 
 CREATE INDEX idx_username   ON users (username);
 CREATE INDEX idx_user_email ON users (email);
+CREATE INDEX idx_user_role_name ON users (role_name);
 
 CREATE TRIGGER update_users_timestamp
 AFTER UPDATE ON users
@@ -52,27 +53,29 @@ END;
 -- CUSTOMERS
 -- ============================================
 
-CREATE TABLE customers (
+CREATE TABLE clients (
     customer_id INTEGER PRIMARY KEY AUTOINCREMENT,
     first_name TEXT,
-    last_name TEXT NOT NULL,
-    business_name TEXT,
+    last_name TEXT,
     phone_number TEXT NOT NULL,
-    email TEXT,
-    tin TEXT NOT NULL, -- Tax Identification Number (Ghana format: 11 digits) - Use TEXT for leading zeros
-    address TEXT,
-    customer_type TEXT NOT NULL CHECK(customer_type IN ('individual', 'business')) DEFAULT 'individual',
+    email TEXT NOT NULL,
+    tin TEXT, -- Tax Identification Number (Ghana format: 11 digits) - Use TEXT for leading zeros
+    business_name TEXT NOT NULL,
+    business_address TEXT,
+    client_type TEXT NOT NULL CHECK(client_type IN ('customer', 'business')) DEFAULT 'individual',
+    business_type TEXT NOT NULL CHECK(business_type IN ('customer', 'supplier', 'export')) DEFAULT 'customer',
     is_active BOOLEAN DEFAULT TRUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     deleted_at DATETIME NULL -- Soft delete
 );
 
-CREATE INDEX idx_customer_phone ON customers (phone_number);
-CREATE INDEX idx_customer_email ON customers (email);
-CREATE INDEX idx_customer_tin   ON customers (tin);
-CREATE INDEX idx_customer_active ON customers (is_active);
-CREATE INDEX idx_customer_type ON customers (customer_type);
+CREATE INDEX idx_client_phone  ON clients (phone_number);
+CREATE INDEX idx_client_email  ON clients (email);
+CREATE INDEX idx_client_tin    ON clients (tin);
+CREATE INDEX idx_client_active ON clients (is_active);
+CREATE INDEX idx_client_type   ON clients (client_type);
+CREATE INDEX idx_client_business_type ON clients (business_type);
 
 CREATE TRIGGER update_customers_timestamp
 AFTER UPDATE ON customers

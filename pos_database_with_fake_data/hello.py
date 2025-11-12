@@ -35,9 +35,9 @@ def read_data():
         # for user in all_users:
         #     print(user)
 
-        print(product_repo.read_single_user_data())
+        # print(product_repo.read_single_user_data())
 
-        print(product_repo.delete_users_data())
+        # print(product_repo.delete_users_data())
 
 
 def main():

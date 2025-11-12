@@ -1,11 +1,6 @@
 from dataclasses import dataclass
 import datetime
 
-"""
-    Table Roles has role_id, role_name, role_description
-    permissions, created_at, updated_at
-"""
-
 @dataclass
 class Roles:
     role_id: int
@@ -15,11 +10,6 @@ class Roles:
     created_at: str
     updated_at: str
 
-"""
-    Table User has user_id, username, password_hash, first_name, last_name
-    email, role_id, is_active, last_login, created_at, updated_at,
-"""
-
 @dataclass
 class User:
     user_id: int
@@ -27,11 +17,33 @@ class User:
     password_hash: str
     first_name: str
     last_name: str 
-    email: str
+    email: str | None
     role_name: str
     is_active: bool
     last_login: datetime
-    created_at: str
-    updated_at: str
+    created_at: datetime
+    updated_at: datetime
+
+
+@dataclass
+class Customer:
+    customer_id: int
+    first_name: str
+    last_name: str
+    business_name: str | None
+    phone_number: str | None
+    email:  str
+    tin: str 
+    address: str
+    customer_type: str
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+    deleted_at: datetime
+
+@dataclass
+class Category:
+    supplier_id: int
+
 
 
