@@ -32,10 +32,10 @@ CREATE TABLE users (
     email TEXT UNIQUE,
     role_name TEXT NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
-    last_login DATETIME NULL,
+    last_login DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    -- FOREIGN KEY (role_name) REFERENCES roles(role_name)
+    FOREIGN KEY (role_name) REFERENCES roles(role_name)
 );
 
 CREATE INDEX idx_username   ON users (username);
@@ -54,15 +54,15 @@ END;
 -- ============================================
 
 CREATE TABLE clients (
-    customer_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    client_id INTEGER PRIMARY KEY AUTOINCREMENT,
     first_name TEXT,
     last_name TEXT,
     phone_number TEXT NOT NULL,
     email TEXT NOT NULL,
     tin TEXT, -- Tax Identification Number (Ghana format: 11 digits) - Use TEXT for leading zeros
+    client_type TEXT NOT NULL CHECK(client_type IN ('customer', 'business')) DEFAULT 'individual',
     business_name TEXT NOT NULL,
     business_address TEXT,
-    client_type TEXT NOT NULL CHECK(client_type IN ('customer', 'business')) DEFAULT 'individual',
     business_type TEXT NOT NULL CHECK(business_type IN ('customer', 'supplier', 'export')) DEFAULT 'customer',
     is_active BOOLEAN DEFAULT TRUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -77,11 +77,11 @@ CREATE INDEX idx_client_active ON clients (is_active);
 CREATE INDEX idx_client_type   ON clients (client_type);
 CREATE INDEX idx_client_business_type ON clients (business_type);
 
-CREATE TRIGGER update_customers_timestamp
-AFTER UPDATE ON customers
+CREATE TRIGGER update_clients_timestamp
+AFTER UPDATE ON clients
 FOR EACH ROW
 BEGIN
-  UPDATE customers SET updated_at = CURRENT_TIMESTAMP WHERE customer_id = OLD.customer_id;
+  UPDATE clients SET updated_at = CURRENT_TIMESTAMP WHERE client_id = OLD.client_id;
 END;
 
 -- ============================================
