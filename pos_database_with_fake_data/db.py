@@ -1,4 +1,4 @@
-from tables import Roles, User, Client
+from tables import Role, User, Client
 from typing import List, Optional
 from faker import Faker
 import bcrypt
@@ -15,8 +15,68 @@ ROLE_NAMES_AND_DESCIRPTIONS = {
     "cashier2": "cashier in store 2",
 }
 
+ROLE_PERMISSIONS = {
+    "admin" : "all perms",
+    "manager1": "perms1",
+    "manager2": "perms2",
+    "cashier1": "perms3",
+    "cashier2": "perms4"
+}
+
 class RoleRepository:
-    pass
+    def __init__(self, db_context: DatabaseContext):
+        self.db = db_context
+
+    def _row_to_role(self, row) -> Role:
+        """Convert database row to Role dataclass"""
+        return Role(
+            role_id=row['role_id'],
+            role_name=row['role_name'],
+            role_description=row['role_description'],
+            permissions=row['permissions'],
+            created_at=row['created_at'],
+            updated_at=row['updated_at']
+        )
+    
+    def read_all_roles(self) -> List[Role]:
+       self.db.execute("SELECT * FROM roles")
+       return [self._row_to_role(role) for role in self.db.fetchall()]
+    
+    def get_single_role(self) -> Optional[Role]:
+        self.db.execute("SELECT * FROM roles LIMIT 1")
+        role = self.db.fetchone()
+        return self._row_to_role(role) if role else None
+    
+    def delete_all_roles(self):
+        self.db.execute("DELETE FROM roles")
+
+    def insert_roles(self):
+        for name, description in ROLE_NAMES_AND_DESCIRPTIONS.items():
+            role_id = faker.numerify(text='############')
+          
+
+            for role_perms_key in ROLE_NAMES_AND_DESCIRPTIONS.keys():
+                if role_perms_key == name: 
+                    permissions = ROLE_PERMISSIONS[role_perms_key]
+            
+            self.db.execute('''
+                INSERT INTO roles (
+                    role_id, role_name, 
+                    role_description, permissions,
+                    created_at, updated_at
+                ) 
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''',
+                (
+                    role_id,
+                    name,
+                    description,
+                    permissions,
+                    faker.date_time(),
+                    faker.date_time()
+                )        
+            )
+            
 
 class UserRepository:
     def __init__(self, db_context: DatabaseContext):
@@ -97,7 +157,7 @@ class UserRepository:
         """
         users = []
 
-        for _ in range(number_of_rows):
+        for i in range(number_of_rows):
             password = f"{faker.password()}".encode()
             password_hash = bcrypt.hashpw(password, bcrypt.gensalt())
             user_id =  faker.numerify(text='############')
@@ -108,7 +168,7 @@ class UserRepository:
                     password_hash=password_hash,
                     first_name=faker.first_name(),
                     last_name=faker.last_name(),
-                    email=faker.email(),
+                    email=f"{i}_{faker.email()}",
                     role_name=random.choice(list(ROLE_NAMES_AND_DESCIRPTIONS.keys())),
                     is_active=random.choice([True, False]),
                     last_login=faker.date_time(),
@@ -244,13 +304,14 @@ class ClientRepository:
                     phone_number=faker.phone_number(),
                     email=faker.email(),
                     tin=faker.itin(),
-                    client_type=random.choice(list("customer","business")),
-                    business_name=faker.building_name(),
+                    client_type=random.choice(["customer","business"]),
+                    business_name=faker.building_number(),
                     business_address=faker.street_address(),
-                    business_type=random.choice(list("customer","supplier", "export")),
+                    business_type=random.choice(["customer","supplier", "export"]),
                     is_active=random.choice([True, False]),
                     created_at=faker.date_time(),
-                    updated_at=faker.date_time()
+                    updated_at=faker.date_time(),
+                    deleted_at=faker.time()
                 )
             )
 
@@ -259,25 +320,29 @@ class ClientRepository:
             print(f"inserting {client.client_id}")
         
             self.db.execute('''
-                INSERT INTO users (
-                        user_id, username, password_hash, 
-                        first_name, last_name, email, 
-                        role_name, is_active, last_login,
-                        created_at, updated_at
-                        ) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO clients (
+                        client_id,  first_name, last_name,
+                        phone_number, email, tin,
+                        client_type, business_name, business_address, 
+                        business_type, is_active, created_at, 
+                        updated_at, deleted_at
+                    ) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''',
                 (
-                    client.user_id,
-                    client.username,
-                    client.password_hash,
+                    client.client_id,
                     client.first_name,
                     client.last_name,
+                    client.phone_number,
                     client.email,
-                    client.role_name,
+                    client.tin,
+                    client.client_type,
+                    client.business_name,
+                    client.business_address,
+                    client.business_type,
                     client.is_active,
-                    client.last_login,
                     client.created_at,
-                    client.updated_at
+                    client.updated_at,
+                    client.deleted_at
                 )        
             )

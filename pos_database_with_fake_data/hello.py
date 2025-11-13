@@ -25,19 +25,34 @@ def read_data():
         pass
 
     with DatabaseContext() as db:
-        product_repo = UserRepository(db)
+        user_repo  = UserRepository(db)
+        roles_repo = RoleRepository(db)
+        client_repo = ClientRepository(db)
 
+        # roles_repo.insert_roles()
+        # print(roles_repo.get_single_role())
+        # roles_repo.delete_all_roles()
 
-        product_repo.populate_user_table_with_fake_data(100)
-
-        # all_users = product_repo.get_all_users()
+        # user_repo.populate_user_table_with_fake_data(100)
+   
+        # all_users = user_repo.get_all_users()
     
         # for user in all_users:
-        #     print(user)
+            # print(user)
 
-        print(product_repo.get_single_user())
+        # print(user_repo.get_single_user())
+        # print(user_repo.delete_all_users())
 
-        print(product_repo.delete_all_users())
+        client_repo.populate_client_table_with_fake_data()
+
+        all_clients = client_repo.get_all_clients()
+
+        for client in all_clients:
+            print(client)
+
+        # print(client_repo.get_single_client())
+        # print(client_repo.delete_all_clients())
+
 
 def main():
     print("Hello from pos-database-with-fake-data!")

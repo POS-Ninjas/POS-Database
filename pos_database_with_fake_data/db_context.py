@@ -41,9 +41,15 @@ class DatabaseContext:
         """Fetch from the stored cursor"""
         return self.cursor.fetchall() if self.cursor else []
     
-    def drop_all_tables(self):
-        return self.cursor.executemany
-
-
-
+    def delete_all_rows_from_table(self):
+    # Get all table names
+        self.cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        tables = [row[0] for row in self.cursor.fetchall()]
+        
+        # Drop each table
+        for table in tables:
+            self.cursor.execute(f"DELETE FROM {table}")
+        
+        self.conn.commit()
+        return f"Dropped {len(tables)} tables"
 
