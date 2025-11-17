@@ -77,7 +77,6 @@ class RoleRepository:
                 )        
             )
             
-
 class UserRepository:
     def __init__(self, db_context: DatabaseContext):
         self.db = db_context

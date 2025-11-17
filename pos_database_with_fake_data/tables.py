@@ -59,7 +59,7 @@ class Supplier:
     phone_number: str
     tin: str
     address: str
-    is_acitve: str
+    is_active: bool
     created_at: datetime
     updated_at: datetime
 
@@ -85,3 +85,105 @@ class Product:
     created_at: datetime
     updated_at: datetime
     deleted_at: datetime
+
+@dataclass
+class Sale:
+    sale_id: int
+    invoice_number: str 
+    sale_date: str
+    customer_id: int
+    biller_id: int
+    subtotal: float
+    discount_amount: float
+    tax_amount: float
+    grand_total: float
+    amount_paid: float
+    change_given: float
+    payment_status: str
+    sale_status: str
+    payment_created: str
+    momo_reference: str
+    notes: str
+    created_at: datetime
+    updated_at: datetime
+
+@dataclass
+class Sale_Item:
+    sale_item_id: int
+    sale_id: int
+    product_id: int
+    quantity: float
+    unit_price: float
+    discount_amount: float
+    tax_rate: float
+    tax_amount: float
+    subtotal: float
+    line_total: float
+    created_at: datetime
+    updated_at: datetime
+
+@dataclass
+class Purchase:
+    purchase_id: int
+    purchase_date: str
+    purchase_invoice: int
+    created_by: str
+    subtotal: float
+    tax_amount: float
+    grand_total: float
+    amount_paid: float
+    balance: float
+    payment_status: str
+    purchase_status: str
+    expected_delivery_date: str
+    received_date: str
+    notes: str
+    created_at: datetime
+    updated_at: datetime
+
+@dataclass
+class Purchase_Items:
+    purchase_item_id: int
+    purchase_id: int
+    product_id: int
+    quantity: float
+    unit_cost: float
+    subtotal: float
+    created_at: datetime
+
+@dataclass
+class Payment:
+    payment_id: int
+    payment_date: str
+    transaction_type: str
+    reference_id: int
+    amount: float
+    payment_method: str
+    payment_reference: str
+    momo_provider: str
+    momo_number: str
+    notes: str
+    processed_by: str
+    created_at: str
+
+@dataclass
+class Audit_Log:
+    audit_id: int
+    user_id: int
+    action: str
+    description: str
+    table_name: str
+    created_at: str
+
+@dataclass
+class Report:
+    report_id: int
+    report_type: str
+    report_title: str
+    generated_by: int
+    start_date: str
+    end_date: str
+    filters: str
+    file_format: str
+    status: str
+    created_at: str
