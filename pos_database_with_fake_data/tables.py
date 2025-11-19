@@ -44,7 +44,7 @@ class Client:
 @dataclass
 class Category:
     category_id: int
-    company_name: str
+    category_name: str
     category_code: str | None
     description: str
     created_at: datetime

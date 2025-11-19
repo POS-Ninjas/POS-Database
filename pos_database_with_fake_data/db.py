@@ -1,4 +1,4 @@
-from tables import Role, User, Client
+from tables import Role, User, Client, Category, Supplier
 from typing import List, Optional
 from faker import Faker
 import bcrypt
@@ -209,7 +209,7 @@ class ClientRepository:
         self.db = db_context
 
     def _row_to_client(self, row) -> Client:
-        """Convert database row to Category dataclass"""
+        """Convert database row to Client dataclass"""
         return Client(
             client_id=row['client_id'],
             first_name=row['first_name'],
@@ -246,7 +246,7 @@ class ClientRepository:
                     client_id, first_name, last_name, 
                     phone_number, email, tin, 
                     client_type, business_name, business_address,
-                    business_type, is_Active, created_at,
+                    business_type, is_active, created_at,
                     updated_at, deleted_at
                 ) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -345,3 +345,190 @@ class ClientRepository:
                     client.deleted_at
                 )        
             )
+
+class CategoryRepository:
+    def __init__(self, db_context: DatabaseContext):
+        self.db = db_context
+
+    def _row_to_category(self, row) -> Category:
+        """Convert database row to Category dataclass"""
+        return Category(
+            category_id=row['category_id'],
+            category_name=row['category_name'],
+            category_code=['category_code'],
+            description=['description'],
+            created_at=row['created_at'],
+            updated_at=row['updated_at'],
+        )
+    
+    def get_all_categories(self) -> List[Category]:
+       self.db.execute("SELECT * FROM categories")
+       return [self._row_to_category(category) for category in self.db.fetchall()]
+    
+    def get_single_category(self) -> Optional[Category]:
+        self.db.execute("SELECT * FROM categories LIMIT 1")
+        category = self.db.fetchone()
+        return self._row_to_category(category) if category else None
+    
+    def delete_all_categories(self):
+        self.db.execute("DELETE FROM categories")
+
+    def save_or_upsert_single_category(self, category: Category):
+        if category.category_id is None:
+            self.db.execute('''
+                INSERT INTO categories (
+                    category_id, category_name, category_code,
+                    description, created_at, updated_at
+                ) 
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (
+                category.category_id,
+                category.category_name,
+                category.category_code,
+                category.description,
+                category.created_at,
+                category.updated_at
+            ))
+            category.category_id = self.db.cursor.lastrowid
+            print(f"Successfully inserted category: {category['category_id']}")
+
+        else:
+            self.db.execute('''
+                UPDATE categories SET
+                    category_name = ?, category_code = ?,
+                    description = ?, created_at = ?,                            
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE category_id = ?
+            ''', (
+                category['category_id'],
+                category['category_name'],
+                category['category_code'],
+                category['description'],
+                category['created_at'],
+                category['updated_at']
+            ))
+            print(f"Updated existing category: {category['category_id']}")
+
+    def populate_category_table_with_fake_data(self, number_of_rows=50):
+
+        """
+            create fake data
+        """
+        records = []
+
+        # Option 1: Use common retail categories
+        categories = [
+            "Electronics", "Clothing", "Groceries", "Home & Garden", 
+            "Health & Beauty", "Sports", "Books", "Toys"
+        ]
+
+        for _ in range(number_of_rows):
+    
+            category_id = faker.numerify(text='############')
+           
+            records.append(
+                Category(
+                    category_id=category_id,
+                    category_name=random.choice(categories) +  " " + category_id,
+                    category_code=f"CAT {category_id}",
+                    description=faker.sentence(),
+                    created_at=faker.date_time(),
+                    updated_at=faker.date_time(),
+                )
+            )
+
+        for category in records:
+
+            print(f"inserting {category.category_id}")
+        
+            self.db.execute('''
+                INSERT INTO categories (
+                        category_id, category_name, category_code,
+                        description, created_at, updated_at
+                    ) 
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''',
+                (
+                    category.category_id,
+                    category.category_name,
+                    category.category_code,
+                    category.description,
+                    category.created_at,
+                    category.updated_at
+                )        
+            )
+
+class SupplierRepository:
+    def __init__(self, db_context: DatabaseContext):
+        self.db = db_context
+
+    def _row_to_supplier(self, row) -> Supplier:
+        """Convert database row to Supplier dataclass"""
+        return Supplier(
+            supplier_id=row['supplier_id'],
+            company_name=['company_name'],
+            contact_name=['contact_name'],
+            email=['email'],
+            phone_number=['phone_number='],
+            tin=['tin'],
+            address=['address'],
+            is_active=['is_active']
+            created_at=row['created_at'],
+            updated_at=row['updated_at']
+        )
+    
+    def get_all_suppliers(self) -> List[Supplier]:
+       self.db.execute("SELECT * FROM suppliers")
+       return [self._row_to_supplier(supplier) for supplier in self.db.fetchall()]
+    
+    def get_single_supplier(self) -> Optional[Supplier]:
+        self.db.execute("SELECT * FROM suppliers LIMIT 1")
+        supplier = self.db.fetchone()
+        return self._row_to_supplier(supplier) if supplier else None
+    
+    def delete_all_suppliers(self):
+        self.db.execute("DELETE FROM suppliers")
+
+    def save_or_upsert_single_category(self, supplier: Supplier):
+        if supplier.supplier_id is None:
+            self.db.execute('''
+                INSERT INTO suppliers (
+                    supplier_id, company_name, contact_code,
+                    email, phone_number, tin, address, 
+                    is_active, created_at, updated_at
+                ) 
+                VALUES (?, ?, ?, ?, ?, ?, ? , ?, ?. ?, ?)
+            ''', (
+                supplier.supplier_id,
+                supplier.company_name,
+                supplier.contact_name,
+                supplier.email,
+                supplier.phone_number,
+                supplier.tin,
+                supplier.address,
+                supplier.is_active,
+                supplier.created_at,
+                supplier.updated_at
+            ))
+            supplier.supplier_id = self.db.cursor.lastrowid
+            print(f"Successfully inserted supplier: {supplier['supplier_id']}")
+
+        else:
+            self.db.execute('''
+                UPDATE suppliers SET
+                    supplier_id, company_name, contact_code,
+                    email, phone_number, tin, address, 
+                    is_active, created_at, updated_at
+                WHERE supplier_id = ?
+            ''', (
+                supplier['supplier_id'],
+                supplier['company_name'],
+                supplier['contact_name'],
+                supplier['phone_number'],
+                supplier['tin'],
+                supplier['address'],
+                supplier['is_address'],
+                supplier['created_at'],
+                supplier['updated_at']
+            ))
+            print(f"Updated existing supplier: {supplier['supplier_id']}")

@@ -25,9 +25,10 @@ def read_data():
         pass
 
     with DatabaseContext() as db:
-        user_repo  = UserRepository(db)
-        roles_repo = RoleRepository(db)
-        client_repo = ClientRepository(db)
+        user_repo     = UserRepository(db)
+        roles_repo    = RoleRepository(db)
+        client_repo   = ClientRepository(db)
+        category_repo = CategoryRepository(db)
 
         # roles_repo.insert_roles()
         # print(roles_repo.get_single_role())
@@ -43,15 +44,26 @@ def read_data():
         # print(user_repo.get_single_user())
         # print(user_repo.delete_all_users())
 
-        client_repo.populate_client_table_with_fake_data()
+        # client_repo.populate_client_table_with_fake_data()
 
-        all_clients = client_repo.get_all_clients()
+        # all_clients = client_repo.get_all_clients()
 
-        for client in all_clients:
-            print(client)
+        # for client in all_clients:
+        #     print(client)
 
         # print(client_repo.get_single_client())
         # print(client_repo.delete_all_clients())
+
+        category_repo.populate_category_table_with_fake_data(10)
+
+        all_categories = category_repo.get_all_categories()
+        print(all_categories)
+
+        for cat in all_categories:
+            print(cat)
+        
+        print(category_repo.get_single_category())
+        print(category_repo.delete_all_categories())
 
 
 def main():
