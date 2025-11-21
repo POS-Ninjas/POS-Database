@@ -91,7 +91,7 @@ class Sale:
     sale_id: int
     invoice_number: str 
     sale_date: str
-    customer_id: int
+    client_id: int
     biller_id: int
     subtotal: float
     discount_amount: float
@@ -99,9 +99,8 @@ class Sale:
     grand_total: float
     amount_paid: float
     change_given: float
-    payment_status: str
     sale_status: str
-    payment_created: str
+    payment_method: str
     momo_reference: str
     notes: str
     created_at: datetime

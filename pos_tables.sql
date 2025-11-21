@@ -90,7 +90,7 @@ END;
 
 CREATE TABLE categories (
   category_id INTEGER PRIMARY KEY AUTOINCREMENT,
-  category_name TEXT NOT NULL UNIQUE,
+  category_name TEXT NOT NULL,
   category_code TEXT UNIQUE,
   description TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
