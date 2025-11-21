@@ -429,7 +429,7 @@ class CategoryRepository:
             records.append(
                 Category(
                     category_id=category_id,
-                    category_name=random.choice(categories) +  " " + category_id,
+                    category_name=random.choice(categories) +  " " + str(category_id),
                     category_code=f"CAT {category_id}",
                     description=faker.sentence(),
                     created_at=faker.date_time(),
@@ -720,7 +720,6 @@ class ProductRepository:
                     unit_purchase_price=faker.pricetag(),
                     unit_selling_price=faker.pricetag(),
                     current_stock=random.randint(),
-                    is_active=faker.boolean(),
                     reorder_level=random.randint(),
                     product_type=random.choice(['service', 'good']),
                     tax_rate=float(random.randrange(0, 100) / 100),
@@ -1076,19 +1075,603 @@ class SaleItemRepository:
                 )        
             )
 
-
+# ==================== PURCHASE REPOSITORY ====================
 class PurchaseRepository:
-    pass
+    def __init__(self, db_context: DatabaseContext):
+        self.db = db_context
 
-class PurchaseItemRepository:
-    pass
+    def _row_to_purchase(self, row) -> Purchase:
+        return Purchase(
+            purchase_id=row['purchase_id'],
+            purchase_date=row['purchase_date'],
+            purchase_invoice=row['purchase_invoice'],
+            created_by=row['created_by'],
+            subtotal=row['subtotal'],
+            tax_amount=row['tax_amount'],
+            grand_total=row['grand_total'],
+            amount_paid=row['amount_paid'],
+            balance=row['balance'],
+            payment_status=row['payment_status'],
+            purchase_status=row['purchase_status'],
+            expected_delivery_date=row['expected_delivery_date'],
+            received_date=row['received_date'],
+            notes=row['notes'],
+            created_at=row['created_at'],
+            updated_at=row['updated_at'],
+        )
+    
+    def get_all_purchases(self) -> List[Purchase]:
+        self.db.execute("SELECT * FROM purchases")
+        return [self._row_to_purchase(purchase) for purchase in self.db.fetchall()]
+    
+    def get_single_purchase(self) -> Optional[Purchase]:
+        self.db.execute("SELECT * FROM purchases LIMIT 1")
+        purchase = self.db.fetchone()
+        return self._row_to_purchase(purchase) if purchase else None
+    
+    def delete_all_purchases(self):
+        self.db.execute("DELETE FROM purchases")
 
-class Payment:
-    pass
+    def save_or_upsert_single_purchase(self, purchase: Purchase):
+        if purchase.purchase_id is None:
+            self.db.execute('''
+                INSERT INTO purchases (
+                    purchase_date, purchase_invoice, created_by, 
+                    subtotal, tax_amount, grand_total, 
+                    amount_paid, balance, payment_status, 
+                    purchase_status, expected_delivery_date, 
+                    received_date, notes, created_at, updated_at
+                ) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                purchase.purchase_date,
+                purchase.purchase_invoice,
+                purchase.created_by,
+                purchase.subtotal,
+                purchase.tax_amount,
+                purchase.grand_total,
+                purchase.amount_paid,
+                purchase.balance,
+                purchase.payment_status,
+                purchase.purchase_status,
+                purchase.expected_delivery_date,
+                purchase.received_date,
+                purchase.notes,
+                purchase.created_at,
+                purchase.updated_at
+            ))
+            purchase.purchase_id = self.db.cursor.lastrowid
+            print(f"Successfully inserted purchase: {purchase.purchase_id}")
+        else:
+            self.db.execute('''
+                UPDATE purchases SET
+                    purchase_date = ?, purchase_invoice = ?, created_by = ?, 
+                    subtotal = ?, tax_amount = ?, grand_total = ?, 
+                    amount_paid = ?, balance = ?, payment_status = ?, 
+                    purchase_status = ?, expected_delivery_date = ?, 
+                    received_date = ?, notes = ?, updated_at = ?
+                WHERE purchase_id = ?
+            ''', (
+                purchase.purchase_date,
+                purchase.purchase_invoice,
+                purchase.created_by,
+                purchase.subtotal,
+                purchase.tax_amount,
+                purchase.grand_total,
+                purchase.amount_paid,
+                purchase.balance,
+                purchase.payment_status,
+                purchase.purchase_status,
+                purchase.expected_delivery_date,
+                purchase.received_date,
+                purchase.notes,
+                purchase.updated_at,
+                purchase.purchase_id
+            ))
+            print(f"Updated existing purchase: {purchase.purchase_id}")
+    
+    def populate_purchases_table_with_fake_data(self, number_of_rows=50):
+        """Create fake purchase data"""
+        from faker import Faker
+        faker = Faker()
+        purchases = []
 
+        for _ in range(number_of_rows):
+            subtotal = faker.random.uniform(100, 5000)
+            tax_amount = subtotal * 0.15
+            grand_total = subtotal + tax_amount
+            amount_paid = faker.random.uniform(0, grand_total)
+            
+            purchases.append(
+                Purchase(
+                    purchase_id=None,
+                    purchase_date=faker.date_time().strftime('%Y-%m-%d'),
+                    purchase_invoice=faker.random_int(min=1000, max=9999),
+                    created_by=faker.name(),
+                    subtotal=round(subtotal, 2),
+                    tax_amount=round(tax_amount, 2),
+                    grand_total=round(grand_total, 2),
+                    amount_paid=round(amount_paid, 2),
+                    balance=round(grand_total - amount_paid, 2),
+                    payment_status=faker.random_element(['Paid', 'Pending', 'Partial']),
+                    purchase_status=faker.random_element(['Ordered', 'Received', 'Cancelled']),
+                    expected_delivery_date=faker.date_time().strftime('%Y-%m-%d'),
+                    received_date=faker.date_time().strftime('%Y-%m-%d'),
+                    notes=faker.text(max_nb_chars=100),
+                    created_at=faker.date_time(),
+                    updated_at=faker.date_time(),
+                )
+            )
+
+        for purchase in purchases:
+            print(f"Inserting purchase invoice: {purchase.purchase_invoice}")
+            self.db.execute('''
+                INSERT INTO purchases (
+                    purchase_date, purchase_invoice, created_by, 
+                    subtotal, tax_amount, grand_total, 
+                    amount_paid, balance, payment_status, 
+                    purchase_status, expected_delivery_date, 
+                    received_date, notes, created_at, updated_at
+                ) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                purchase.purchase_date,
+                purchase.purchase_invoice,
+                purchase.created_by,
+                purchase.subtotal,
+                purchase.tax_amount,
+                purchase.grand_total,
+                purchase.amount_paid,
+                purchase.balance,
+                purchase.payment_status,
+                purchase.purchase_status,
+                purchase.expected_delivery_date,
+                purchase.received_date,
+                purchase.notes,
+                purchase.created_at,
+                purchase.updated_at
+            ))
+
+
+# ==================== PURCHASE ITEMS REPOSITORY ====================
+class PurchaseItemsRepository:
+    def __init__(self, db_context: DatabaseContext):
+        self.db = db_context
+
+    def _row_to_purchase_item(self, row) -> Purchase_Items:
+        return Purchase_Items(
+            purchase_item_id=row['purchase_item_id'],
+            purchase_id=row['purchase_id'],
+            product_id=row['product_id'],
+            quantity=row['quantity'],
+            unit_cost=row['unit_cost'],
+            subtotal=row['subtotal'],
+            created_at=row['created_at'],
+        )
+    
+    def get_all_purchase_items(self) -> List[Purchase_Items]:
+        self.db.execute("SELECT * FROM purchase_items")
+        return [self._row_to_purchase_item(item) for item in self.db.fetchall()]
+    
+    def get_single_purchase_item(self) -> Optional[Purchase_Items]:
+        self.db.execute("SELECT * FROM purchase_items LIMIT 1")
+        item = self.db.fetchone()
+        return self._row_to_purchase_item(item) if item else None
+    
+    def delete_all_purchase_items(self):
+        self.db.execute("DELETE FROM purchase_items")
+
+    def save_or_upsert_single_purchase_item(self, item: Purchase_Items):
+        if item.purchase_item_id is None:
+            self.db.execute('''
+                INSERT INTO purchase_items (
+                    purchase_id, product_id, quantity, 
+                    unit_cost, subtotal, created_at
+                ) 
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (
+                item.purchase_id,
+                item.product_id,
+                item.quantity,
+                item.unit_cost,
+                item.subtotal,
+                item.created_at
+            ))
+            item.purchase_item_id = self.db.cursor.lastrowid
+            print(f"Successfully inserted purchase item: {item.purchase_item_id}")
+        else:
+            self.db.execute('''
+                UPDATE purchase_items SET
+                    purchase_id = ?, product_id = ?, quantity = ?, 
+                    unit_cost = ?, subtotal = ?
+                WHERE purchase_item_id = ?
+            ''', (
+                item.purchase_id,
+                item.product_id,
+                item.quantity,
+                item.unit_cost,
+                item.subtotal,
+                item.purchase_item_id
+            ))
+            print(f"Updated existing purchase item: {item.purchase_item_id}")
+    
+    def populate_purchase_items_table_with_fake_data(self, number_of_rows=50):
+        """Create fake purchase items data"""
+        from faker import Faker
+        faker = Faker()
+        items = []
+
+        for _ in range(number_of_rows):
+            quantity = faker.random.uniform(1, 100)
+            unit_cost = faker.random.uniform(10, 500)
+            
+            items.append(
+                Purchase_Items(
+                    purchase_item_id=None,
+                    purchase_id=faker.random_int(min=1, max=100),
+                    product_id=faker.random_int(min=1, max=500),
+                    quantity=round(quantity, 2),
+                    unit_cost=round(unit_cost, 2),
+                    subtotal=round(quantity * unit_cost, 2),
+                    created_at=faker.date_time(),
+                )
+            )
+
+        for item in items:
+            print(f"Inserting purchase item for purchase_id: {item.purchase_id}")
+            self.db.execute('''
+                INSERT INTO purchase_items (
+                    purchase_id, product_id, quantity, 
+                    unit_cost, subtotal, created_at
+                ) 
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (
+                item.purchase_id,
+                item.product_id,
+                item.quantity,
+                item.unit_cost,
+                item.subtotal,
+                item.created_at
+            ))
+
+
+# ==================== PAYMENT REPOSITORY ====================
+class PaymentRepository:
+    def __init__(self, db_context: DatabaseContext):
+        self.db = db_context
+
+    def _row_to_payment(self, row) -> Payment:
+        return Payment(
+            payment_id=row['payment_id'],
+            payment_date=row['payment_date'],
+            transaction_type=row['transaction_type'],
+            reference_id=row['reference_id'],
+            amount=row['amount'],
+            payment_method=row['payment_method'],
+            payment_reference=row['payment_reference'],
+            momo_provider=row['momo_provider'],
+            momo_number=row['momo_number'],
+            notes=row['notes'],
+            processed_by=row['processed_by'],
+            created_at=row['created_at'],
+        )
+    
+    def get_all_payments(self) -> List[Payment]:
+        self.db.execute("SELECT * FROM payments")
+        return [self._row_to_payment(payment) for payment in self.db.fetchall()]
+    
+    def get_single_payment(self) -> Optional[Payment]:
+        self.db.execute("SELECT * FROM payments LIMIT 1")
+        payment = self.db.fetchone()
+        return self._row_to_payment(payment) if payment else None
+    
+    def delete_all_payments(self):
+        self.db.execute("DELETE FROM payments")
+
+    def save_or_upsert_single_payment(self, payment: Payment):
+        if payment.payment_id is None:
+            self.db.execute('''
+                INSERT INTO payments (
+                    payment_date, transaction_type, reference_id, 
+                    amount, payment_method, payment_reference, 
+                    momo_provider, momo_number, notes, 
+                    processed_by, created_at
+                ) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                payment.payment_date,
+                payment.transaction_type,
+                payment.reference_id,
+                payment.amount,
+                payment.payment_method,
+                payment.payment_reference,
+                payment.momo_provider,
+                payment.momo_number,
+                payment.notes,
+                payment.processed_by,
+                payment.created_at
+            ))
+            payment.payment_id = self.db.cursor.lastrowid
+            print(f"Successfully inserted payment: {payment.payment_id}")
+        else:
+            self.db.execute('''
+                UPDATE payments SET
+                    payment_date = ?, transaction_type = ?, reference_id = ?, 
+                    amount = ?, payment_method = ?, payment_reference = ?, 
+                    momo_provider = ?, momo_number = ?, notes = ?, 
+                    processed_by = ?
+                WHERE payment_id = ?
+            ''', (
+                payment.payment_date,
+                payment.transaction_type,
+                payment.reference_id,
+                payment.amount,
+                payment.payment_method,
+                payment.payment_reference,
+                payment.momo_provider,
+                payment.momo_number,
+                payment.notes,
+                payment.processed_by,
+                payment.payment_id
+            ))
+            print(f"Updated existing payment: {payment.payment_id}")
+    
+    def populate_payments_table_with_fake_data(self, number_of_rows=50):
+        """Create fake payment data"""
+        from faker import Faker
+        faker = Faker()
+        payments = []
+
+        for _ in range(number_of_rows):
+            payments.append(
+                Payment(
+                    payment_id=None,
+                    payment_date=faker.date_time().strftime('%Y-%m-%d'),
+                    transaction_type=faker.random_element(['Sale', 'Purchase', 'Refund']),
+                    reference_id=faker.random_int(min=1, max=1000),
+                    amount=round(faker.random.uniform(10, 5000), 2),
+                    payment_method=faker.random_element(['Cash', 'Card', 'Mobile Money', 'Bank Transfer']),
+                    payment_reference=faker.uuid4(),
+                    momo_provider=faker.random_element(['MTN', 'Vodafone', 'AirtelTigo', 'N/A']),
+                    momo_number=faker.phone_number(),
+                    notes=faker.text(max_nb_chars=100),
+                    processed_by=faker.name(),
+                    created_at=faker.date_time().strftime('%Y-%m-%d %H:%M:%S'),
+                )
+            )
+
+        for payment in payments:
+            print(f"Inserting payment: {payment.payment_reference}")
+            self.db.execute('''
+                INSERT INTO payments (
+                    payment_date, transaction_type, reference_id, 
+                    amount, payment_method, payment_reference, 
+                    momo_provider, momo_number, notes, 
+                    processed_by, created_at
+                ) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                payment.payment_date,
+                payment.transaction_type,
+                payment.reference_id,
+                payment.amount,
+                payment.payment_method,
+                payment.payment_reference,
+                payment.momo_provider,
+                payment.momo_number,
+                payment.notes,
+                payment.processed_by,
+                payment.created_at
+            ))
+
+
+# ==================== AUDIT LOG REPOSITORY ====================
 class AuditLogRepository:
-    pass
+    def __init__(self, db_context: DatabaseContext):
+        self.db = db_context
 
+    def _row_to_audit_log(self, row) -> Audit_Log:
+        return Audit_Log(
+            audit_id=row['audit_id'],
+            user_id=row['user_id'],
+            action=row['action'],
+            description=row['description'],
+            table_name=row['table_name'],
+            created_at=row['created_at'],
+        )
+    
+    def get_all_audit_logs(self) -> List[Audit_Log]:
+        self.db.execute("SELECT * FROM audit_logs")
+        return [self._row_to_audit_log(log) for log in self.db.fetchall()]
+    
+    def get_single_audit_log(self) -> Optional[Audit_Log]:
+        self.db.execute("SELECT * FROM audit_logs LIMIT 1")
+        log = self.db.fetchone()
+        return self._row_to_audit_log(log) if log else None
+    
+    def delete_all_audit_logs(self):
+        self.db.execute("DELETE FROM audit_logs")
+
+    def save_or_upsert_single_audit_log(self, log: Audit_Log):
+        if log.audit_id is None:
+            self.db.execute('''
+                INSERT INTO audit_logs (
+                    user_id, action, description, 
+                    table_name, created_at
+                ) 
+                VALUES (?, ?, ?, ?, ?)
+            ''', (
+                log.user_id,
+                log.action,
+                log.description,
+                log.table_name,
+                log.created_at
+            ))
+            log.audit_id = self.db.cursor.lastrowid
+            print(f"Successfully inserted audit log: {log.audit_id}")
+        else:
+            self.db.execute('''
+                UPDATE audit_logs SET
+                    user_id = ?, action = ?, description = ?, 
+                    table_name = ?
+                WHERE audit_id = ?
+            ''', (
+                log.user_id,
+                log.action,
+                log.description,
+                log.table_name,
+                log.audit_id
+            ))
+            print(f"Updated existing audit log: {log.audit_id}")
+    
+    def populate_audit_logs_table_with_fake_data(self, number_of_rows=50):
+        """Create fake audit log data"""
+        from faker import Faker
+        faker = Faker()
+        logs = []
+
+        for _ in range(number_of_rows):
+            logs.append(
+                Audit_Log(
+                    audit_id=None,
+                    user_id=faker.random_int(min=1, max=50),
+                    action=faker.random_element(['INSERT', 'UPDATE', 'DELETE', 'SELECT']),
+                    description=faker.text(max_nb_chars=150),
+                    table_name=faker.random_element(['sales', 'purchases', 'products', 'customers', 'payments']),
+                    created_at=faker.date_time().strftime('%Y-%m-%d %H:%M:%S'),
+                )
+            )
+
+        for log in logs:
+            print(f"Inserting audit log for user: {log.user_id}")
+            self.db.execute('''
+                INSERT INTO audit_logs (
+                    user_id, action, description, 
+                    table_name, created_at
+                ) 
+                VALUES (?, ?, ?, ?, ?)
+            ''', (
+                log.user_id,
+                log.action,
+                log.description,
+                log.table_name,
+                log.created_at
+            ))
+
+
+# ==================== REPORT REPOSITORY ====================
 class ReportRepository:
-    pass
+    def __init__(self, db_context: DatabaseContext):
+        self.db = db_context
+
+    def _row_to_report(self, row) -> Report:
+        return Report(
+            report_id=row['report_id'],
+            report_type=row['report_type'],
+            report_title=row['report_title'],
+            generated_by=row['generated_by'],
+            start_date=row['start_date'],
+            end_date=row['end_date'],
+            filters=row['filters'],
+            file_format=row['file_format'],
+            status=row['status'],
+            created_at=row['created_at'],
+        )
+    
+    def get_all_reports(self) -> List[Report]:
+        self.db.execute("SELECT * FROM reports")
+        return [self._row_to_report(report) for report in self.db.fetchall()]
+    
+    def get_single_report(self) -> Optional[Report]:
+        self.db.execute("SELECT * FROM reports LIMIT 1")
+        report = self.db.fetchone()
+        return self._row_to_report(report) if report else None
+    
+    def delete_all_reports(self):
+        self.db.execute("DELETE FROM reports")
+
+    def save_or_upsert_single_report(self, report: Report):
+        if report.report_id is None:
+            self.db.execute('''
+                INSERT INTO reports (
+                    report_type, report_title, generated_by, 
+                    start_date, end_date, filters, 
+                    file_format, status, created_at
+                ) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                report.report_type,
+                report.report_title,
+                report.generated_by,
+                report.start_date,
+                report.end_date,
+                report.filters,
+                report.file_format,
+                report.status,
+                report.created_at
+            ))
+            report.report_id = self.db.cursor.lastrowid
+            print(f"Successfully inserted report: {report.report_id}")
+        else:
+            self.db.execute('''
+                UPDATE reports SET
+                    report_type = ?, report_title = ?, generated_by = ?, 
+                    start_date = ?, end_date = ?, filters = ?, 
+                    file_format = ?, status = ?
+                WHERE report_id = ?
+            ''', (
+                report.report_type,
+                report.report_title,
+                report.generated_by,
+                report.start_date,
+                report.end_date,
+                report.filters,
+                report.file_format,
+                report.status,
+                report.report_id
+            ))
+            print(f"Updated existing report: {report.report_id}")
+    
+    def populate_reports_table_with_fake_data(self, number_of_rows=50):
+        """Create fake report data"""
+        from faker import Faker
+        faker = Faker()
+        reports = []
+
+        for _ in range(number_of_rows):
+            reports.append(
+                Report(
+                    report_id=None,
+                    report_type=faker.random_element(['Sales', 'Inventory', 'Financial', 'Customers']),
+                    report_title=faker.sentence(nb_words=4),
+                    generated_by=faker.random_int(min=1, max=20),
+                    start_date=faker.date_time().strftime('%Y-%m-%d'),
+                    end_date=faker.date_time().strftime('%Y-%m-%d'),
+                    filters=faker.json(),
+                    file_format=faker.random_element(['PDF', 'CSV', 'Excel', 'JSON']),
+                    status=faker.random_element(['Completed', 'Processing', 'Failed']),
+                    created_at=faker.date_time().strftime('%Y-%m-%d %H:%M:%S'),
+                )
+            )
+
+        for report in reports:
+            print(f"Inserting report: {report.report_title}")
+            self.db.execute('''
+                INSERT INTO reports (
+                    report_type, report_title, generated_by, 
+                    start_date, end_date, filters, 
+                    file_format, status, created_at
+                ) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                report.report_type,
+                report.report_title,
+                report.generated_by,
+                report.start_date,
+                report.end_date,
+                report.filters,
+                report.file_format,
+                report.status,
+                report.created_at
+            ))
     
