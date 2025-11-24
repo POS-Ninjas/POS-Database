@@ -73,8 +73,8 @@ class Product:
     supplier_id: int | None
     image_url: str | None
     description: str | None
-    unit_purchase_price: float
-    unit_selling_price: float
+    unit_purchase_price: str
+    unit_selling_price: str
     current_stock: int
     reorder_level: int
     product_type: str
@@ -112,12 +112,12 @@ class Sale_Item:
     sale_id: int
     product_id: int
     quantity: float
-    unit_price: float
-    discount_amount: float
-    tax_rate: float
-    tax_amount: float
-    subtotal: float
-    line_total: float
+    unit_price: str
+    discount_amount: str
+    tax_rate: str
+    tax_amount: str
+    subtotal: str
+    line_total: str
     created_at: datetime
     updated_at: datetime
 
@@ -131,11 +131,10 @@ class Purchase:
     tax_amount: float
     grand_total: float
     amount_paid: float
-    balance: float
     payment_status: str
     purchase_status: str
     expected_delivery_date: str
-    received_date: str
+    date_received: str
     notes: str
     created_at: datetime
     updated_at: datetime

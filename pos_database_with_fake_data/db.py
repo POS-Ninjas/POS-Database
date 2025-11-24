@@ -53,7 +53,6 @@ class RoleRepository:
     def insert_roles(self):
         for name, description in ROLE_NAMES_AND_DESCIRPTIONS.items():
             role_id = faker.numerify(text='############')
-          
 
             for role_perms_key in ROLE_NAMES_AND_DESCIRPTIONS.keys():
                 if role_perms_key == name: 
@@ -164,12 +163,12 @@ class UserRepository:
                 User(
                     user_id=user_id,
                     username=faker.user_name(),
-                    password_hash=password_hash,
+                    password_hash=str(password_hash),
                     first_name=faker.first_name(),
                     last_name=faker.last_name(),
                     email=f"{i}_{faker.email()}",
-                    role_name=random.choice(list(ROLE_NAMES_AND_DESCIRPTIONS.keys())),
-                    is_active=random.choice([True, False]),
+                    role_name=str(random.choice(list(ROLE_NAMES_AND_DESCIRPTIONS.keys()))),
+                    is_active=str(random.choice([True, False])),
                     last_login=faker.date_time(),
                     created_at=faker.date_time(),
                     updated_at=faker.date_time()
@@ -293,7 +292,7 @@ class ClientRepository:
 
         for _ in range(number_of_rows):
     
-            client_id =  faker.numerify(text='############')
+            client_id = str(faker.numerify(text='############'))
            
             clients.append(
                 Client(
@@ -303,14 +302,14 @@ class ClientRepository:
                     phone_number=faker.phone_number(),
                     email=faker.email(),
                     tin=faker.itin(),
-                    client_type=random.choice(["customer","business"]),
+                    client_type=str(random.choice(["customer","business"])),
                     business_name=faker.building_number(),
                     business_address=faker.street_address(),
-                    business_type=random.choice(["customer","supplier", "export"]),
-                    is_active=random.choice([True, False]),
+                    business_type=str(random.choice(["customer","supplier", "export"])),
+                    is_active=str(random.choice([True, False])),
                     created_at=faker.date_time(),
                     updated_at=faker.date_time(),
-                    deleted_at=faker.time()
+                    deleted_at=faker.date_time()
                 )
             )
 
@@ -320,11 +319,10 @@ class ClientRepository:
         
             self.db.execute('''
                 INSERT INTO clients (
-                        client_id,  first_name, last_name,
-                        phone_number, email, tin,
-                        client_type, business_name, business_address, 
-                        business_type, is_active, created_at, 
-                        updated_at, deleted_at
+                        client_id, first_name, last_name,
+                        phone_number, email, tin, client_type, 
+                        business_name, business_address, business_type, 
+                        is_active, created_at, updated_at, deleted_at
                     ) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''',
@@ -422,15 +420,13 @@ class CategoryRepository:
             "Health & Beauty", "Sports", "Books", "Toys"
         ]
 
-        for _ in range(number_of_rows):
-    
-            category_id =random.randrange(0, 8)
+        for i in range(number_of_rows):
            
             records.append(
                 Category(
-                    category_id=category_id,
-                    category_name=random.choice(categories) +  " " + str(category_id),
-                    category_code=f"CAT {category_id}",
+                    category_id=None,
+                    category_name=random.choice(categories),
+                    category_code=f"CAT{i+1:03d}",
                     description=faker.sentence(),
                     created_at=faker.date_time(),
                     updated_at=faker.date_time(),
@@ -542,7 +538,7 @@ class SupplierRepository:
 
         for _ in range(number_of_rows):
     
-            supplier_id = faker.numerify(text='############')
+            supplier_id = int(faker.numerify(text='############'))
             tin = faker.bothify("TIN-#########")
            
             suppliers.append(
@@ -694,70 +690,79 @@ class ProductRepository:
             print(f"Updated existing products: {product['product_id']}")
 
     def populate_products_table_with_fake_data(self, number_of_rows=50):
+        """
+        Create fake product data with VALID foreign key references
+        """
+        # Clear existing products first
+        self.delete_all_products()
+        
+        # Get valid category IDs that exist in the database
+        self.db.execute("SELECT category_id FROM categories")
+        valid_category_ids = [row['category_id'] for row in self.db.fetchall()]
+        
+        # Get valid supplier IDs that exist in the database
+        self.db.execute("SELECT supplier_id FROM suppliers")
+        valid_supplier_ids = [row['supplier_id'] for row in self.db.fetchall()]
+        
+        if not valid_category_ids:
+            raise Exception("No categories found! Create categories first.")
+        if not valid_supplier_ids:
+            raise Exception("No suppliers found! Create suppliers first.")
 
-        """
-            create fake data
-        """
         products = []
-
-
-        for _ in range(number_of_rows):
-    
-            product_id = faker.numerify(text='############')
-            supplier_id = faker.numerify(text='############')
-
+        for i in range(number_of_rows):
+            purchase_price = round(random.uniform(5, 500), 2)
+            selling_price = round(purchase_price * random.uniform(1.2, 2.5), 2)  # 20-150% markup
+            
             products.append(
                 Product(
-                    product_id=product_id,
-                    product_name=faker.company(),
-                    product_code=faker.name(),
-                    barcode=faker.email(),
-                    category_id=random.randrange(0, 9),
-                    supplier_id=supplier_id,
-                    image_url=faker.url(),
+                    product_id=None,  # Let database auto-generate
+                    product_name=faker.company() + " " + faker.word(),
+                    product_code=f"PROD{i+1:05d}",
+                    barcode=faker.ean13(),
+                    category_id=random.choice(valid_category_ids),
+                    supplier_id=random.choice(valid_supplier_ids),
+                    image_url=faker.image_url(),
                     description=faker.sentence(),
-                    address=faker.address(),
-                    unit_purchase_price=faker.pricetag(),
-                    unit_selling_price=faker.pricetag(),
-                    current_stock=random.randint(),
-                    reorder_level=random.randint(),
-                    product_type=random.choice(['service', 'good']),
-                    tax_rate=float(random.randrange(0, 100) / 100),
-                    is_taxable=faker.boolean(),
-                    is_tax_inclusive=faker.boolean(),
-                    is_active=faker.boolean(),
+                    unit_purchase_price=purchase_price,
+                    unit_selling_price=selling_price,
+                    current_stock=random.randint(0, 1000),
+                    reorder_level=random.randint(10, 50),
+                    product_type=random.choice(['goods', 'service']),
+                    tax_rate=round(random.uniform(0, 20), 2),
+                    is_taxable=random.choice([True, False]),
+                    is_tax_inclusive=random.choice([True, False]),
+                    is_active=random.choice([True, False]),
                     created_at=faker.date_time(),
                     updated_at=faker.date_time(),
+                    deleted_at=None
                 )
             )
 
         for product in products:
-
-            print(f"inserting {product.product_id}")
-        
-            self.db.execute('''
-                   INSERT INTO products (
-                        product_id, product_name, product_code,
-                        barcode, category_id, supplier_id, image_url,
-                        description, unit_purchase_price, unit_selling_price,
-                        current_stock, reorder_level, product_type,
-                        tax_rate, is_taxable, is_tax_inclusive,
-                        is_active, created_at, updated_at, deleted_at
+            try:
+                print(f"Inserting product: {product.product_name}")
+                
+                self.db.execute('''
+                    INSERT INTO products (
+                        product_name, product_code, barcode, category_id, supplier_id,
+                        image_url, description, unit_purchase_price, unit_selling_price,
+                        current_stock, reorder_level, product_type, tax_rate,
+                        is_taxable, is_tax_inclusive, is_active, created_at,
+                        updated_at, deleted_at
                     ) 
-                VALUES (?, ?, ?, ?, ?, ?, ? , ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''',
-                (
-                    product.product_id,
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
                     product.product_name,
                     product.product_code,
                     product.barcode,
-                    product.category_id,
-                    product.supplier_id,
+                    product.category_id,  # This is now a VALID category_id
+                    product.supplier_id,  # This is now a VALID supplier_id
                     product.image_url,
                     product.description,
                     product.unit_purchase_price,
                     product.unit_selling_price,
-                    product.current_stock, 
+                    product.current_stock,
                     product.reorder_level,
                     product.product_type,
                     product.tax_rate,
@@ -767,8 +772,13 @@ class ProductRepository:
                     product.created_at,
                     product.updated_at,
                     product.deleted_at
-                )        
-            )
+                ))
+            except Exception as e:
+                print(f"Error inserting product {product.product_name}: {e}")
+                raise
+        
+        print(f"✅ Successfully inserted {len(products)} products")
+
 
 class SaleRepository:
     def __init__(self, db_context: DatabaseContext):
@@ -779,17 +789,17 @@ class SaleRepository:
             sale_id=row['sale_id'],
             invoice_number=row['invoice_number'],
             sale_date=row['sale_date'],
-            customer_id=row['customer_id'],
+            client_id=row['client_id'],
             category_id=row['category_id'],
             biller_id=row['biller_id'],
             subtotal=row['subtotal'],
             discount_amount=row['discount_amount'],
             tax_amount=row['tax_amount'],
+            grand_total=row['grand_total'],
             amount_paid=row['amount_paid'],
             change_given=row['change_given'],
-            payment_status=row['payment_status'],
             sale_status=row['sale_status'],
-            payment_created=row['payment_created'],
+            payment_method=row['payment_method'],
             momo_reference=row['momo_reference'],
             notes=row['notes'],
             created_at=row['created_at'],
@@ -813,18 +823,18 @@ class SaleRepository:
             self.db.execute('''
                 INSERT INTO sales (
                     sale_id, invoice_number, sale_date,
-                    customer_id, biller_id, subtotal, discount_amount,
+                    client_id, biller_id, subtotal, discount_amount,
                     tax_amount, grand_total, amount_paid,
-                    change_given, sale_status, payment_created,
+                    change_given, sale_status, payment_method,
                     momo_reference, notes, created_at,
-                    updated_at
+                    updated_at,
                 ) 
                 VALUES (?, ?, ?, ?, ?, ?, ? , ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 sale.sale_id,
                 sale.invoice_number,
                 sale.sale_date,
-                sale.customer_id,
+                sale.client_id,
                 sale.biller_id,
                 sale.supplier_id,
                 sale.subtotal,
@@ -834,7 +844,7 @@ class SaleRepository:
                 sale.amount_paid, 
                 sale.change_given,
                 sale.sale_status,
-                sale.payment_created,
+                sale.payment_method,
                 sale.momo_reference,
                 sale.notes,
                 sale.created_at,
@@ -847,7 +857,7 @@ class SaleRepository:
             self.db.execute('''
                 UPDATE sales SET
                     sale_id, invoice_number, sale_date,
-                    customer_id, biller_id, subtotal, discount_amount,
+                    client_id, biller_id, subtotal, discount_amount,
                     tax_amount, grand_total, amount_paid,
                     change_given, sale_status, payment_method,
                     momo_reference, notes, created_at, updated_at
@@ -856,15 +866,14 @@ class SaleRepository:
                 sale['sale_id'],
                 sale['invoice_number'],
                 sale['sale_date'],
-                sale['customer_id'],
-                sale['category_id'],
+                sale['client_id'],
                 sale['biller_id'],
                 sale['subtotal'],
                 sale['discount_amount'],
                 sale['tax_amount'],
+                sale['grand_total'],
                 sale['amount_paid'],
                 sale['change_given'],
-                sale['payment_status'],
                 sale['sale_status'],
                 sale['payment_method'],
                 sale['momo_reference'],
@@ -873,79 +882,97 @@ class SaleRepository:
                 sale['updated_at']
             ))
             print(f"Updated existing sales: {sale['sale_id']}")
-    
+
     def populate_sales_table_with_fake_data(self, number_of_rows=50):
+        """
+        Create fake sales data with VALID foreign key references
+        """
+        # Clear existing sales first
+        self.delete_all_sales()
+        
+        # Get valid client IDs that exist in the database
+        self.db.execute("SELECT client_id FROM clients")
+        valid_client_ids = [row['client_id'] for row in self.db.fetchall()]
+        
+        # Get valid user IDs for billers that exist in the database
+        self.db.execute("SELECT user_id FROM users")
+        valid_user_ids = [row['user_id'] for row in self.db.fetchall()]
+        
+        if not valid_client_ids:
+            raise Exception("No clients found! Create clients first.")
+        if not valid_user_ids:
+            raise Exception("No users found! Create users first.")
 
-        """
-            create fake data
-        """
         sales = []
-
-
-        for _ in range(number_of_rows):
-    
-            category_id    = random.randrange(0, 8)
-            sale_status    = random.choice(['completed', 'cancelled', 'refunded', 'on_hold'])
+        for i in range(number_of_rows):
+            subtotal = round(random.uniform(50, 5000), 2)
+            discount_amount = round(subtotal * random.uniform(0, 0.2), 2)  # 0-20% discount
+            tax_amount = round((subtotal - discount_amount) * 0.15, 2)  # 15% tax
+            grand_total = round(subtotal - discount_amount + tax_amount, 2)
+            amount_paid = round(grand_total * random.uniform(0.8, 1.2), 2)  # May overpay or underpay
+            change_given = max(0, amount_paid - grand_total)
+            
+            sale_status = random.choice(['completed', 'cancelled', 'refunded', 'on_hold'])
             payment_method = random.choice(['cash', 'momo', 'card', 'bank_transfer', 'credit'])
 
             sales.append(
                 Sale(
-                    sale_id=faker.numerify(text='############'),
-                    invoice_number=faker.numerify(text='############'),
-                    sale_date=faker.date(),
-                    client_id=faker.numerify(text='############'),
-                    category_id=category_id,
-                    biller_id=faker.numerify(text='############'),
-                    subtotal=faker.numerify(),
-                    discount_amount=faker.random_digit() / 100,
-                    tax_amount=faker.random_digit() / 100,
-                    amount_paid=faker.random_digit() / 100,
-                    change_given=faker.random_digit() / 100,
+                    sale_id=None,  # Let database auto-generate - REMOVED manual ID
+                    invoice_number=f"INV-{faker.random_number(digits=6)}",
+                    sale_date=faker.date_time_this_year(),
+                    client_id=random.choice(valid_client_ids),  # Use VALID client ID
+                    biller_id=random.choice(valid_user_ids),    # Use VALID user ID
+                    subtotal=subtotal,
+                    discount_amount=discount_amount,
+                    tax_amount=tax_amount,
+                    grand_total=grand_total,
+                    amount_paid=amount_paid,
+                    change_given=change_given,
                     sale_status=sale_status,
                     payment_method=payment_method,
-                    momo_reference=faker.bothify(text="REF????-#####"),
-                    notes=faker.text(),
+                    momo_reference=faker.bothify(text="REF????-#####") if payment_method == 'momo' else None,
+                    notes=faker.text(max_nb_chars=100),
                     created_at=faker.date_time(),
                     updated_at=faker.date_time(),
                 )
             )
 
         for sale in sales:
-
-            print(f"inserting {sale.sale_id}")
-        
-            self.db.execute('''
-                   INSERT INTO sales (
-                        sale_id, invoice_number, sale_date,
-                        customer_id, biller_id, subtotal, discount_amount,
-                        tax_amount, grand_total, amount_paid,
-                        change_given, sale_status, payment_created,
-                        momo_reference, notes, created_at,
-                        updated_at
+            try:
+                print(f"Inserting sale: {sale.invoice_number}")
+                
+                self.db.execute('''
+                    INSERT INTO sales (
+                        invoice_number, sale_date, client_id, biller_id, 
+                        subtotal, discount_amount, tax_amount, grand_total, 
+                        amount_paid, change_given, sale_status, payment_method, 
+                        momo_reference, notes, created_at, updated_at
                     ) 
-                VALUES (?, ?, ?, ?, ?, ?, ? , ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''',
-                (
-                    sale.sale_id,
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
                     sale.invoice_number,
                     sale.sale_date,
-                    sale.customer_id,
-                    sale.category_id,
+                    sale.client_id,
                     sale.biller_id,
                     sale.subtotal,
                     sale.discount_amount,
                     sale.tax_amount,
+                    sale.grand_total,
                     sale.amount_paid,
                     sale.change_given,
-                    sale.payment_status,
                     sale.sale_status,
                     sale.payment_method,
                     sale.momo_reference,
                     sale.notes,
                     sale.created_at,
                     sale.updated_at
-                )        
-            )
+                ))
+            except Exception as e:
+                print(f"Error inserting sale {sale.invoice_number}: {e}")
+                raise
+        
+        print(f"✅ Successfully inserted {len(sales)} sales")
+    
 
 class SaleItemRepository:
     def __init__(self, db_context: DatabaseContext):
@@ -956,11 +983,11 @@ class SaleItemRepository:
             sale_item_id=row['sale_item_id'],
             sale_id=row['sale_id'],
             product_id=row['product_id'],
-            quantity=row['customer_id'],
-            unit_price=row['category_id'],
+            quantity=row['quantity'],
+            unit_price=row['unit_price'],
             discount_amount=row['discount_amount'],
-            tax_rate=row['tax_amount'],
-            tax_amount=row['amount_paid'],
+            tax_rate=row['tax_rate'],
+            tax_amount=row['tax_amount'],
             subtotal=row['subtotal'],
             line_total=row['line_total'],
             created_at=row['created_at'],
@@ -1020,47 +1047,75 @@ class SaleItemRepository:
             print(f"Updated existing sales: {sale_item['sale_item_id']}")
     
     def populate_sale_items_table_with_fake_data(self, number_of_rows=50):
+        """
+        Create fake sale items data with VALID foreign key references
+        """
+        # Clear existing sale items first
+        self.delete_all_sale_items()
+        
+        # Get valid sale IDs that exist in the database
+        self.db.execute("SELECT sale_id FROM sales")
+        valid_sale_ids = [row['sale_id'] for row in self.db.fetchall()]
+        
+        # Get valid product IDs that exist in the database
+        self.db.execute("SELECT product_id, unit_selling_price FROM products")
+        valid_products = [row for row in self.db.fetchall()]
+        
+        if not valid_sale_ids:
+            raise Exception("No sales found! Create sales first.")
+        if not valid_products:
+            raise Exception("No products found! Create products first.")
 
-        """
-            create fake data
-        """
         sale_items = []
-
-
-        for _ in range(number_of_rows):
+        for i in range(number_of_rows):
+            # Get random sale and product
+            sale_id = random.choice(valid_sale_ids)
+            product = random.choice(valid_products)
+            product_id = product['product_id']
+            unit_price = product['unit_selling_price']  # Use actual product price
+            
+            # Generate realistic values
+            quantity = random.randint(1, 10)
+            discount_percent = random.uniform(0, 0.15)  # 0-15% discount
+            tax_rate = 0.15  # Standard 15% VAT
+            
+            # Calculate line item totals
+            subtotal = round(quantity * unit_price, 2)
+            discount_amount = round(subtotal * discount_percent, 2)
+            taxable_amount = subtotal - discount_amount
+            tax_amount = round(taxable_amount * tax_rate, 2)
+            line_total = round(taxable_amount + tax_amount, 2)
 
             sale_items.append(
-            Sale_Item(
-                    sale_item_id=faker.numerify(text='############'),
-                    sale_id=faker.numerify(text='############'),
-                    product_id=faker.numerify(text='############'),
-                    quantity=faker.random_digit(),
-                    unit_price=faker.pricetag(),
-                    discount_amount=faker.random_digit() / 100,
-                    tax_rate=faker.random_digit() / 100,
-                    tax_amount=faker.random_digit() / 100,
-                    subtotal=faker.random_digit() / 100,
-                    line_total=faker.random_digit() / 100,
+                Sale_Item(
+                    sale_item_id=None,  # Let database auto-generate
+                    sale_id=sale_id,  # Use VALID sale ID
+                    product_id=product_id,  # Use VALID product ID
+                    quantity=quantity,
+                    unit_price=unit_price,
+                    discount_amount=discount_amount,
+                    tax_rate=tax_rate,
+                    tax_amount=tax_amount,
+                    subtotal=subtotal,
+                    line_total=line_total,
                     created_at=faker.date_time(),
                     updated_at=faker.date_time(),
                 )
             )
 
         for sale_item in sale_items:
-
-            print(f"inserting {sale_item.sale_item_id}")
-        
-            self.db.execute('''
-                   INSERT INTO sale_items (
-                        sale_item_id, sale_id, product_id, quantity, 
+            try:
+                print(f"Inserting sale item for sale_id: {sale_item.sale_id}")
+                
+                self.db.execute('''
+                    INSERT INTO sale_items (
+                        sale_id, product_id, quantity, 
                         unit_price, discount_amount, 
                         tax_rate, tax_amount, subtotal, 
                         line_total, created_at, updated_at
                     ) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''',
-                (
-                    sale_item.sale_item_id,
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
                     sale_item.sale_id,
                     sale_item.product_id,
                     sale_item.quantity,
@@ -1072,8 +1127,12 @@ class SaleItemRepository:
                     sale_item.line_total,
                     sale_item.created_at,
                     sale_item.updated_at
-                )        
-            )
+                ))
+            except Exception as e:
+                print(f"Error inserting sale item: {e}")
+                raise
+        
+        print(f"✅ Successfully inserted {len(sale_items)} sale items")
 
 # ==================== PURCHASE REPOSITORY ====================
 class PurchaseRepository:
@@ -1169,34 +1228,61 @@ class PurchaseRepository:
                 purchase.purchase_id
             ))
             print(f"Updated existing purchase: {purchase.purchase_id}")
-    
+        
     def populate_purchases_table_with_fake_data(self, number_of_rows=50):
-        """Create fake purchase data"""
-        from faker import Faker
-        faker = Faker()
-        purchases = []
+        """Create fake purchase data with VALID foreign key references"""
+        # Clear existing purchases first
+        self.delete_all_purchases()
+        
+        # Get valid usernames that exist in the database for created_by
+        self.db.execute("SELECT username FROM users")
+        valid_usernames = [row['username'] for row in self.db.fetchall()]
+        
+        if not valid_usernames:
+            raise Exception("No users found! Create users first.")
 
-        for _ in range(number_of_rows):
-            subtotal = faker.random.uniform(100, 5000)
-            tax_amount = subtotal * 0.15
-            grand_total = subtotal + tax_amount
-            amount_paid = faker.random.uniform(0, grand_total)
+        purchases = []
+        for i in range(number_of_rows):
+            subtotal = round(random.uniform(100, 5000), 2)
+            tax_amount = round(subtotal * 0.15, 2)  # 15% VAT
+            grand_total = round(subtotal + tax_amount, 2)
+            amount_paid = round(random.uniform(0, grand_total), 2)
             
+            # Determine payment status based on amount paid
+            if amount_paid == 0:
+                payment_status = 'unpaid'
+            elif amount_paid < grand_total:
+                payment_status = 'partial'
+            else:
+                payment_status = 'paid'
+            
+            # Determine purchase status
+            purchase_status = random.choice(['pending', 'ordered', 'partially_received', 'received', 'cancelled'])
+            
+            # Generate simple dates
+            purchase_date = faker.date_this_year()
+            expected_delivery_date = faker.date_between(start_date=purchase_date, end_date='+30d')
+            
+            # Only set date_received if status is received or partially_received
+            if purchase_status in ['received', 'partially_received']:
+                date_received = faker.date_between(start_date=purchase_date, end_date=expected_delivery_date)
+            else:
+                date_received = None
+
             purchases.append(
                 Purchase(
-                    purchase_id=None,
-                    purchase_date=faker.date_time().strftime('%Y-%m-%d'),
-                    purchase_invoice=faker.random_int(min=1000, max=9999),
-                    created_by=faker.name(),
-                    subtotal=round(subtotal, 2),
-                    tax_amount=round(tax_amount, 2),
-                    grand_total=round(grand_total, 2),
-                    amount_paid=round(amount_paid, 2),
-                    balance=round(grand_total - amount_paid, 2),
-                    payment_status=faker.random_element(['Paid', 'Pending', 'Partial']),
-                    purchase_status=faker.random_element(['Ordered', 'Received', 'Cancelled']),
-                    expected_delivery_date=faker.date_time().strftime('%Y-%m-%d'),
-                    received_date=faker.date_time().strftime('%Y-%m-%d'),
+                    purchase_id=None,  # Let database auto-generate
+                    purchase_date=purchase_date.strftime('%Y-%m-%d'),
+                    purchase_invoice=f"PINV-{faker.random_number(digits=6)}",
+                    created_by=random.choice(valid_usernames),  # Use VALID username
+                    subtotal=subtotal,
+                    tax_amount=tax_amount,
+                    grand_total=grand_total,
+                    amount_paid=amount_paid,
+                    payment_status=payment_status,
+                    purchase_status=purchase_status,
+                    expected_delivery_date=expected_delivery_date.strftime('%Y-%m-%d'),
+                    date_received=date_received.strftime('%Y-%m-%d') if date_received else None,
                     notes=faker.text(max_nb_chars=100),
                     created_at=faker.date_time(),
                     updated_at=faker.date_time(),
@@ -1204,34 +1290,39 @@ class PurchaseRepository:
             )
 
         for purchase in purchases:
-            print(f"Inserting purchase invoice: {purchase.purchase_invoice}")
-            self.db.execute('''
-                INSERT INTO purchases (
-                    purchase_date, purchase_invoice, created_by, 
-                    subtotal, tax_amount, grand_total, 
-                    amount_paid, balance, payment_status, 
-                    purchase_status, expected_delivery_date, 
-                    received_date, notes, created_at, updated_at
-                ) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                purchase.purchase_date,
-                purchase.purchase_invoice,
-                purchase.created_by,
-                purchase.subtotal,
-                purchase.tax_amount,
-                purchase.grand_total,
-                purchase.amount_paid,
-                purchase.balance,
-                purchase.payment_status,
-                purchase.purchase_status,
-                purchase.expected_delivery_date,
-                purchase.received_date,
-                purchase.notes,
-                purchase.created_at,
-                purchase.updated_at
-            ))
-
+            try:
+                print(f"Inserting purchase invoice: {purchase.purchase_invoice}")
+                
+                self.db.execute('''
+                    INSERT INTO purchases (
+                        purchase_date, purchase_invoice, created_by, 
+                        subtotal, tax_amount, grand_total, 
+                        amount_paid, payment_status, 
+                        purchase_status, expected_delivery_date, 
+                        date_received, notes, created_at, updated_at
+                    ) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    purchase.purchase_date,
+                    purchase.purchase_invoice,
+                    purchase.created_by,
+                    purchase.subtotal,
+                    purchase.tax_amount,
+                    purchase.grand_total,
+                    purchase.amount_paid,
+                    purchase.payment_status,
+                    purchase.purchase_status,
+                    purchase.expected_delivery_date,
+                    purchase.date_received,
+                    purchase.notes,
+                    purchase.created_at,
+                    purchase.updated_at
+                ))
+            except Exception as e:
+                print(f"Error inserting purchase {purchase.purchase_invoice}: {e}")
+                raise
+        
+        print(f"✅ Successfully inserted {len(purchases)} purchases")
 
 # ==================== PURCHASE ITEMS REPOSITORY ====================
 class PurchaseItemsRepository:
@@ -1296,44 +1387,68 @@ class PurchaseItemsRepository:
             print(f"Updated existing purchase item: {item.purchase_item_id}")
     
     def populate_purchase_items_table_with_fake_data(self, number_of_rows=50):
-        """Create fake purchase items data"""
-        from faker import Faker
-        faker = Faker()
-        items = []
+        """Create fake purchase items data with VALID foreign key references"""
+        # Clear existing purchase items first
+        self.delete_all_purchase_items()
+        
+        # Get valid purchase IDs that exist in the database
+        self.db.execute("SELECT purchase_id FROM purchases")
+        valid_purchase_ids = [row['purchase_id'] for row in self.db.fetchall()]
+        
+        # Get valid product IDs that exist in the database
+        self.db.execute("SELECT product_id FROM products")
+        valid_product_ids = [row['product_id'] for row in self.db.fetchall()]
+        
+        if not valid_purchase_ids:
+            raise Exception("No purchases found! Create purchases first.")
+        if not valid_product_ids:
+            raise Exception("No products found! Create products first.")
 
-        for _ in range(number_of_rows):
-            quantity = faker.random.uniform(1, 100)
-            unit_cost = faker.random.uniform(10, 500)
+        items = []
+        for i in range(number_of_rows):
+            # Use valid IDs from the database
+            purchase_id = random.choice(valid_purchase_ids)
+            product_id = random.choice(valid_product_ids)
             
+            quantity = random.randint(1, 100)
+            unit_cost = round(random.uniform(10, 500), 2)
+            subtotal = round(quantity * unit_cost, 2)
+
             items.append(
                 Purchase_Items(
-                    purchase_item_id=None,
-                    purchase_id=faker.random_int(min=1, max=100),
-                    product_id=faker.random_int(min=1, max=500),
-                    quantity=round(quantity, 2),
-                    unit_cost=round(unit_cost, 2),
-                    subtotal=round(quantity * unit_cost, 2),
-                    created_at=faker.date_time(),
+                    purchase_item_id=None,  # Let database auto-generate
+                    purchase_id=purchase_id,  # Use VALID purchase ID
+                    product_id=product_id,    # Use VALID product ID
+                    quantity=quantity,
+                    unit_cost=unit_cost,
+                    subtotal=subtotal,
+                    created_at=faker.date_time_this_year(),
                 )
             )
 
         for item in items:
-            print(f"Inserting purchase item for purchase_id: {item.purchase_id}")
-            self.db.execute('''
-                INSERT INTO purchase_items (
-                    purchase_id, product_id, quantity, 
-                    unit_cost, subtotal, created_at
-                ) 
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (
-                item.purchase_id,
-                item.product_id,
-                item.quantity,
-                item.unit_cost,
-                item.subtotal,
-                item.created_at
-            ))
-
+            try:
+                print(f"Inserting purchase item for purchase_id: {item.purchase_id}")
+                
+                self.db.execute('''
+                    INSERT INTO purchase_items (
+                        purchase_id, product_id, quantity, 
+                        unit_cost, subtotal, created_at
+                    ) 
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (
+                    item.purchase_id,
+                    item.product_id,
+                    item.quantity,
+                    item.unit_cost,
+                    item.subtotal,
+                    item.created_at
+                ))
+            except Exception as e:
+                print(f"Error inserting purchase item: {e}")
+                raise
+        
+        print(f"✅ Successfully inserted {len(items)} purchase items")
 
 # ==================== PAYMENT REPOSITORY ====================
 class PaymentRepository:
@@ -1417,53 +1532,106 @@ class PaymentRepository:
             print(f"Updated existing payment: {payment.payment_id}")
     
     def populate_payments_table_with_fake_data(self, number_of_rows=50):
-        """Create fake payment data"""
-        from faker import Faker
-        faker = Faker()
-        payments = []
+        """Create fake payment data with VALID foreign key references"""
+        # Clear existing payments first
+        self.delete_all_payments()
+        
+        # Get valid usernames that exist in the database for processed_by
+        self.db.execute("SELECT username FROM users")
+        valid_usernames = [row['username'] for row in self.db.fetchall()]
+        
+        # Get valid sale IDs for reference_id
+        self.db.execute("SELECT sale_id FROM sales")
+        valid_sale_ids = [row['sale_id'] for row in self.db.fetchall()]
+        
+        # Get valid purchase IDs for reference_id
+        self.db.execute("SELECT purchase_id FROM purchases")
+        valid_purchase_ids = [row['purchase_id'] for row in self.db.fetchall()]
+        
+        if not valid_usernames:
+            raise Exception("No users found! Create users first.")
+        if not valid_sale_ids and not valid_purchase_ids:
+            raise Exception("No sales or purchases found! Create sales or purchases first.")
 
-        for _ in range(number_of_rows):
+        payments = []
+        for i in range(number_of_rows):
+            # Choose transaction type and get appropriate reference ID
+            transaction_type = random.choice(['sale', 'purchase', 'refund'])
+            
+            if transaction_type == 'sale' and valid_sale_ids:
+                reference_id = random.choice(valid_sale_ids)
+                amount = round(random.uniform(10, 1000), 2)  # Smaller amounts for sales
+            elif transaction_type == 'purchase' and valid_purchase_ids:
+                reference_id = random.choice(valid_purchase_ids)
+                amount = round(random.uniform(100, 5000), 2)  # Larger amounts for purchases
+            else:
+                # If no valid IDs for chosen type, use what's available
+                if valid_sale_ids:
+                    reference_id = random.choice(valid_sale_ids)
+                    transaction_type = 'sale'
+                    amount = round(random.uniform(10, 1000), 2)
+                else:
+                    reference_id = random.choice(valid_purchase_ids)
+                    transaction_type = 'purchase'
+                    amount = round(random.uniform(100, 5000), 2)
+            
+            payment_method = random.choice(['cash', 'momo', 'card', 'bank_transfer', 'cheque'])
+            
+            # Only set momo fields if payment method is momo
+            if payment_method == 'momo':
+                momo_provider = random.choice(['mtn', 'vodafone', 'airteltigo'])
+                momo_number = faker.phone_number()
+            else:
+                momo_provider = None
+                momo_number = None
+
             payments.append(
                 Payment(
-                    payment_id=None,
-                    payment_date=faker.date_time().strftime('%Y-%m-%d'),
-                    transaction_type=faker.random_element(['Sale', 'Purchase', 'Refund']),
-                    reference_id=faker.random_int(min=1, max=1000),
-                    amount=round(faker.random.uniform(10, 5000), 2),
-                    payment_method=faker.random_element(['Cash', 'Card', 'Mobile Money', 'Bank Transfer']),
-                    payment_reference=faker.uuid4(),
-                    momo_provider=faker.random_element(['MTN', 'Vodafone', 'AirtelTigo', 'N/A']),
-                    momo_number=faker.phone_number(),
+                    payment_id=None,  # Let database auto-generate
+                    payment_date=faker.date_time_this_year().strftime('%Y-%m-%d'),
+                    transaction_type=transaction_type,
+                    reference_id=reference_id,  # Use VALID reference ID
+                    amount=amount,
+                    payment_method=payment_method,
+                    payment_reference=f"PAY-{faker.random_number(digits=8)}",
+                    momo_provider=momo_provider,
+                    momo_number=momo_number,
                     notes=faker.text(max_nb_chars=100),
-                    processed_by=faker.name(),
-                    created_at=faker.date_time().strftime('%Y-%m-%d %H:%M:%S'),
+                    processed_by=random.choice(valid_usernames),  # Use VALID username
+                    created_at=faker.date_time_this_year().strftime('%Y-%m-%d %H:%M:%S'),
                 )
             )
 
         for payment in payments:
-            print(f"Inserting payment: {payment.payment_reference}")
-            self.db.execute('''
-                INSERT INTO payments (
-                    payment_date, transaction_type, reference_id, 
-                    amount, payment_method, payment_reference, 
-                    momo_provider, momo_number, notes, 
-                    processed_by, created_at
-                ) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                payment.payment_date,
-                payment.transaction_type,
-                payment.reference_id,
-                payment.amount,
-                payment.payment_method,
-                payment.payment_reference,
-                payment.momo_provider,
-                payment.momo_number,
-                payment.notes,
-                payment.processed_by,
-                payment.created_at
-            ))
-
+            try:
+                print(f"Inserting payment: {payment.payment_reference}")
+                
+                self.db.execute('''
+                    INSERT INTO payments (
+                        payment_date, transaction_type, reference_id, 
+                        amount, payment_method, payment_reference, 
+                        momo_provider, momo_number, notes, 
+                        processed_by, created_at
+                    ) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    payment.payment_date,
+                    payment.transaction_type,
+                    payment.reference_id,
+                    payment.amount,
+                    payment.payment_method,
+                    payment.payment_reference,
+                    payment.momo_provider,
+                    payment.momo_number,
+                    payment.notes,
+                    payment.processed_by,
+                    payment.created_at
+                ))
+            except Exception as e:
+                print(f"Error inserting payment {payment.payment_reference}: {e}")
+                raise
+        
+        print(f"✅ Successfully inserted {len(payments)} payments")
 
 # ==================== AUDIT LOG REPOSITORY ====================
 class AuditLogRepository:
@@ -1525,39 +1693,76 @@ class AuditLogRepository:
             print(f"Updated existing audit log: {log.audit_id}")
     
     def populate_audit_logs_table_with_fake_data(self, number_of_rows=50):
-        """Create fake audit log data"""
-        from faker import Faker
-        faker = Faker()
-        logs = []
+        """Create fake audit log data with VALID foreign key references"""
+        # Clear existing audit logs first
+        self.delete_all_audit_logs()
+        
+        # Get valid user IDs that exist in the database
+        self.db.execute("SELECT user_id FROM users")
+        valid_user_ids = [row['user_id'] for row in self.db.fetchall()]
+        
+        if not valid_user_ids:
+            raise Exception("No users found! Create users first.")
 
-        for _ in range(number_of_rows):
+        # Valid table names from your actual database schema
+        valid_tables = ['sales', 'purchases', 'products', 'clients', 'payments', 'users', 'categories', 'suppliers']
+        
+        # Common actions with realistic descriptions
+        actions = {
+            'INSERT': 'Created new record in',
+            'UPDATE': 'Modified existing record in', 
+            'DELETE': 'Removed record from',
+            'SELECT': 'Viewed records in',
+            'LOGIN': 'User logged into system',
+            'LOGOUT': 'User logged out of system'
+        }
+
+        logs = []
+        for i in range(number_of_rows):
+            user_id = random.choice(valid_user_ids)
+            action = random.choice(list(actions.keys()))
+            table_name = random.choice(valid_tables)
+            
+            # Create realistic description based on action and table
+            if action in ['LOGIN', 'LOGOUT']:
+                description = actions[action]
+                table_name = 'system'  # Special case for login/logout
+            else:
+                description = f"{actions[action]} {table_name} table"
+
             logs.append(
                 Audit_Log(
-                    audit_id=None,
-                    user_id=faker.random_int(min=1, max=50),
-                    action=faker.random_element(['INSERT', 'UPDATE', 'DELETE', 'SELECT']),
-                    description=faker.text(max_nb_chars=150),
-                    table_name=faker.random_element(['sales', 'purchases', 'products', 'customers', 'payments']),
-                    created_at=faker.date_time().strftime('%Y-%m-%d %H:%M:%S'),
+                    audit_id=None,  # Let database auto-generate
+                    user_id=user_id,  # Use VALID user ID
+                    action=action,
+                    description=description,
+                    table_name=table_name,
+                    created_at=faker.date_time_this_year().strftime('%Y-%m-%d %H:%M:%S'),
                 )
             )
 
         for log in logs:
-            print(f"Inserting audit log for user: {log.user_id}")
-            self.db.execute('''
-                INSERT INTO audit_logs (
-                    user_id, action, description, 
-                    table_name, created_at
-                ) 
-                VALUES (?, ?, ?, ?, ?)
-            ''', (
-                log.user_id,
-                log.action,
-                log.description,
-                log.table_name,
-                log.created_at
-            ))
-
+            try:
+                print(f"Inserting audit log for user_id: {log.user_id} - {log.action} on {log.table_name}")
+                
+                self.db.execute('''
+                    INSERT INTO audit_logs (
+                        user_id, action, description, 
+                        table_name, created_at
+                    ) 
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (
+                    log.user_id,
+                    log.action,
+                    log.description,
+                    log.table_name,
+                    log.created_at
+                ))
+            except Exception as e:
+                print(f"Error inserting audit log: {e}")
+                raise
+        
+        print(f"✅ Successfully inserted {len(logs)} audit logs")
 
 # ==================== REPORT REPOSITORY ====================
 class ReportRepository:
@@ -1633,45 +1838,85 @@ class ReportRepository:
             print(f"Updated existing report: {report.report_id}")
     
     def populate_reports_table_with_fake_data(self, number_of_rows=50):
-        """Create fake report data"""
-        from faker import Faker
-        faker = Faker()
-        reports = []
+        """Create fake report data with VALID foreign key references"""
+        # Clear existing reports first
+        self.delete_all_reports()
+        
+        # Get valid user IDs that exist in the database for generated_by
+        self.db.execute("SELECT user_id FROM users")
+        valid_user_ids = [row['user_id'] for row in self.db.fetchall()]
+        
+        if not valid_user_ids:
+            raise Exception("No users found! Create users first.")
 
-        for _ in range(number_of_rows):
+        reports = []
+        for i in range(number_of_rows):
+            # Ensure end_date is after start_date
+            start_date = faker.date_this_year()
+            end_date = faker.date_between(start_date=start_date, end_date='+30d')
+            
+            report_type = random.choice(['sales', 'purchases', 'clients', 'products', 'custom'])
+            
+            # Create realistic report titles based on type
+            report_titles = {
+                'sales': ['Daily Sales Summary', 'Monthly Revenue Report', 'Product Performance Analysis', 'Sales by Category'],
+                'purchases': ['Vendor Purchase History', 'Monthly Procurement Report', 'Supplier Performance Analysis'],
+                'clients': ['Customer Database Export', 'Client Purchase History', 'Customer Segmentation Report'],
+                'products': ['Inventory Stock Report', 'Product Profitability Analysis', 'Low Stock Alert Report'],
+                'custom': ['Custom Business Analysis', 'Financial Summary Report', 'Operational Efficiency Report']
+            }
+            
+            report_title = random.choice(report_titles[report_type])
+
+            # Create simple filter examples
+            filter_examples = {
+                'sales': '{"date_range": "last_30_days", "category": "all"}',
+                'purchases': '{"supplier": "all", "status": "completed"}',
+                'clients': '{"client_type": "business", "active_only": true}',
+                'products': '{"category": "electronics", "low_stock": true}',
+                'custom': '{"custom_filters": "business_analysis"}'
+            }
+
             reports.append(
                 Report(
-                    report_id=None,
-                    report_type=faker.random_element(['Sales', 'Inventory', 'Financial', 'Customers']),
-                    report_title=faker.sentence(nb_words=4),
-                    generated_by=faker.random_int(min=1, max=20),
-                    start_date=faker.date_time().strftime('%Y-%m-%d'),
-                    end_date=faker.date_time().strftime('%Y-%m-%d'),
-                    filters=faker.json(),
-                    file_format=faker.random_element(['PDF', 'CSV', 'Excel', 'JSON']),
-                    status=faker.random_element(['Completed', 'Processing', 'Failed']),
-                    created_at=faker.date_time().strftime('%Y-%m-%d %H:%M:%S'),
+                    report_id=None,  # Let database auto-generate
+                    report_type=report_type,
+                    report_title=report_title,
+                    generated_by=random.choice(valid_user_ids),  # Use VALID user ID
+                    start_date=start_date.strftime('%Y-%m-%d'),
+                    end_date=end_date.strftime('%Y-%m-%d'),
+                    filters=filter_examples[report_type],
+                    file_format=random.choice(['pdf', 'excel', 'csv']),
+                    status=random.choice(['pending', 'completed', 'failed']),
+                    created_at=faker.date_time_this_year().strftime('%Y-%m-%d %H:%M:%S'),
                 )
             )
 
         for report in reports:
-            print(f"Inserting report: {report.report_title}")
-            self.db.execute('''
-                INSERT INTO reports (
-                    report_type, report_title, generated_by, 
-                    start_date, end_date, filters, 
-                    file_format, status, created_at
-                ) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                report.report_type,
-                report.report_title,
-                report.generated_by,
-                report.start_date,
-                report.end_date,
-                report.filters,
-                report.file_format,
-                report.status,
-                report.created_at
-            ))
+            try:
+                print(f"Inserting report: {report.report_title}")
+                
+                self.db.execute('''
+                    INSERT INTO reports (
+                        report_type, report_title, generated_by, 
+                        start_date, end_date, filters, 
+                        file_format, status, created_at
+                    ) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    report.report_type,
+                    report.report_title,
+                    report.generated_by,
+                    report.start_date,
+                    report.end_date,
+                    report.filters,
+                    report.file_format,
+                    report.status,
+                    report.created_at
+                ))
+            except Exception as e:
+                print(f"Error inserting report {report.report_title}: {e}")
+                raise
+        
+        print(f"✅ Successfully inserted {len(reports)} reports")
     

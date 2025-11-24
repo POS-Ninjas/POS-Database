@@ -11,7 +11,6 @@ TODO
 - have corresponding crud functions for each of the table 
 - test the functions
 - test the indexes of the database tables
-
 """
 
 DB_PATH = Path('/home/test/Desktop/pos/POS-Database') / 'test.db'
@@ -25,46 +24,33 @@ def read_data():
         pass
 
     with DatabaseContext() as db:
-        user_repo     = UserRepository(db)
-        roles_repo    = RoleRepository(db)
-        client_repo   = ClientRepository(db)
-        category_repo = CategoryRepository(db)
+        user_repo           = UserRepository(db)
+        roles_repo          = RoleRepository(db)
+        client_repo         = ClientRepository(db)
+        category_repo       = CategoryRepository(db)
+        supplier_repo       = SupplierRepository(db)
+        product_repo        = ProductRepository(db)
+        sale_repo           = SaleRepository(db)
+        sale_item_repo      = SaleItemRepository(db)
+        purchase_repo       = PurchaseRepository(db)
+        purchase_items_repo = PurchaseItemsRepository(db)
+        payment_repo        = PaymentRepository(db)
+        audit_log_repo      = AuditLogRepository(db)
+        report_repo         = ReportRepository(db)
 
-        # roles_repo.insert_roles()
-        # print(roles_repo.get_single_role())
-        # roles_repo.delete_all_roles()
-
-        # user_repo.populate_user_table_with_fake_data(100)
-   
-        # all_users = user_repo.get_all_users()
-    
-        # for user in all_users:
-            # print(user)
-
-        # print(user_repo.get_single_user())
-        # print(user_repo.delete_all_users())
-
-        # client_repo.populate_client_table_with_fake_data()
-
-        # all_clients = client_repo.get_all_clients()
-
-        # for client in all_clients:
-        #     print(client)
-
-        # print(client_repo.get_single_client())
-        # print(client_repo.delete_all_clients())
-
-        category_repo.populate_category_table_with_fake_data(10)
-
-        all_categories = category_repo.get_all_categories()
-        print(all_categories)
-
-        for cat in all_categories:
-            print(cat)
-        
-        print(category_repo.get_single_category())
-        print(category_repo.delete_all_categories())
-
+        roles_repo.insert_roles()
+        user_repo.populate_user_table_with_fake_data()
+        category_repo.populate_category_table_with_fake_data()
+        supplier_repo.populate_suppliers_table_with_fake_data()
+        client_repo.populate_client_table_with_fake_data()
+        product_repo.populate_products_table_with_fake_data()
+        sale_repo.populate_sales_table_with_fake_data()
+        sale_item_repo.populate_sale_items_table_with_fake_data()
+        purchase_repo.populate_purchases_table_with_fake_data()
+        purchase_items_repo.populate_purchase_items_table_with_fake_data()
+        payment_repo.populate_payments_table_with_fake_data()
+        audit_log_repo.populate_audit_logs_table_with_fake_data()
+        report_repo.populate_reports_table_with_fake_data()
 
 def main():
     print("Hello from pos-database-with-fake-data!")

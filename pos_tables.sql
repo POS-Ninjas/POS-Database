@@ -9,11 +9,11 @@
 
 CREATE TABLE roles (
   role_id INTEGER PRIMARY KEY AUTOINCREMENT,
-  role_name TEXT NOT NULL UNIQUE, -- Staff and Admin
+  role_name TEXT NOT NULL UNIQUE,
   role_description TEXT,
-  permissions TEXT, -- Store JSON as text: e.g. '["view_sales", "create_products", "manage_users"]'
+  permissions TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TRIGGER update_roles_timestamp
@@ -38,7 +38,7 @@ CREATE TABLE users (
   FOREIGN KEY (role_name) REFERENCES roles(role_name)
 );
 
-CREATE INDEX idx_username   ON users (username);
+CREATE INDEX idx_username ON users (username);
 CREATE INDEX idx_user_email ON users (email);
 CREATE INDEX idx_user_role_name ON users (role_name);
 
@@ -59,7 +59,7 @@ CREATE TABLE clients (
   last_name TEXT,
   phone_number TEXT NOT NULL,
   email TEXT NOT NULL,
-  tin TEXT NOT NULL , -- Tax Identification Number (Ghana format: 11 digits) - Use TEXT for leading zeros
+  tin TEXT NOT NULL,
   client_type TEXT NOT NULL CHECK(client_type IN ('customer', 'business')) DEFAULT 'customer',
   business_name TEXT NOT NULL,
   business_address TEXT,
@@ -67,14 +67,14 @@ CREATE TABLE clients (
   is_active BOOLEAN DEFAULT TRUE,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  deleted_at DATETIME -- Soft delete
+  deleted_at DATETIME
 );
 
-CREATE INDEX idx_client_phone  ON clients (phone_number);
-CREATE INDEX idx_client_email  ON clients (email);
-CREATE INDEX idx_client_tin    ON clients (tin);
+CREATE INDEX idx_client_phone ON clients (phone_number);
+CREATE INDEX idx_client_email ON clients (email);
+CREATE INDEX idx_client_tin ON clients (tin);
 CREATE INDEX idx_client_active ON clients (is_active);
-CREATE INDEX idx_client_type   ON clients (client_type);
+CREATE INDEX idx_client_type ON clients (client_type);
 CREATE INDEX idx_client_business_type ON clients (business_type);
 
 CREATE TRIGGER update_clients_timestamp
@@ -94,7 +94,7 @@ CREATE TABLE categories (
   category_code TEXT UNIQUE,
   description TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TRIGGER update_categories_timestamp
@@ -110,17 +110,17 @@ CREATE TABLE suppliers (
   contact_name TEXT,
   email TEXT,
   phone_number TEXT NOT NULL,
-  tin TEXT NOT NULL, 
+  tin TEXT NOT NULL,
   address TEXT,
   is_active BOOLEAN DEFAULT TRUE,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_supplier_company ON suppliers (company_name);
-CREATE INDEX idx_supplier_phone   ON suppliers (phone_number);
-CREATE INDEX idx_supplier_tin     ON suppliers (tin);
-CREATE INDEX idx_supplier_active  ON suppliers (is_active);
+CREATE INDEX idx_supplier_phone ON suppliers (phone_number);
+CREATE INDEX idx_supplier_tin ON suppliers (tin);
+CREATE INDEX idx_supplier_active ON suppliers (is_active);
 
 CREATE TRIGGER update_suppliers_timestamp
 AFTER UPDATE ON suppliers
@@ -143,7 +143,7 @@ CREATE TABLE products (
   current_stock INTEGER DEFAULT 0,
   reorder_level INTEGER DEFAULT 10,
   product_type TEXT NOT NULL CHECK(product_type IN ('goods', 'service')) DEFAULT 'goods',
-  tax_rate REAL DEFAULT 15.00, -- Ghana VAT: 15%
+  tax_rate REAL DEFAULT 15.00,
   is_taxable BOOLEAN DEFAULT TRUE,
   is_active BOOLEAN DEFAULT TRUE,
   is_tax_inclusive BOOLEAN DEFAULT FALSE,
@@ -154,11 +154,11 @@ CREATE TABLE products (
   FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id)
 );
 
-CREATE INDEX idx_product_code     ON products (product_code);
-CREATE INDEX idx_product_barcode  ON products (barcode);
+CREATE INDEX idx_product_code ON products (product_code);
+CREATE INDEX idx_product_barcode ON products (barcode);
 CREATE INDEX idx_product_category ON products (category_id);
-CREATE INDEX idx_product_supplier ON products (supplier_id);  -- Added: Useful for supplier reports
-CREATE INDEX idx_product_active   ON products (is_active);
+CREATE INDEX idx_product_supplier ON products (supplier_id);
+CREATE INDEX idx_product_active ON products (is_active);
 
 CREATE TRIGGER update_products_timestamp
 AFTER UPDATE ON products
@@ -175,17 +175,17 @@ CREATE TABLE sales (
   sale_id INTEGER PRIMARY KEY AUTOINCREMENT,
   invoice_number TEXT NOT NULL UNIQUE,
   sale_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-  client_id INTEGER, -- Nullable for walk-in clients
-  biller_id INTEGER NOT NULL, -- User who processed the sale
+  client_id INTEGER,
+  biller_id INTEGER NOT NULL,
   subtotal REAL NOT NULL,
   discount_amount REAL DEFAULT 0.00,
-  tax_amount REAL DEFAULT 0.00, -- Total VAT/NHIL/GETFund
+  tax_amount REAL DEFAULT 0.00,
   grand_total REAL NOT NULL,
   amount_paid REAL NOT NULL,
   change_given REAL DEFAULT 0.00,
   sale_status TEXT NOT NULL CHECK(sale_status IN ('completed', 'cancelled', 'refunded', 'on_hold')) DEFAULT 'on_hold',
   payment_method TEXT NOT NULL CHECK(payment_method IN ('cash', 'momo', 'card', 'bank_transfer', 'credit')) DEFAULT 'cash',
-  momo_reference TEXT, -- For mobile money transactions
+  momo_reference TEXT,
   notes TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -194,9 +194,9 @@ CREATE TABLE sales (
 );
 
 CREATE INDEX idx_sales_invoice ON sales (invoice_number);
-CREATE INDEX idx_sales_date    ON sales (sale_date);
-CREATE INDEX idx_sales_client  ON sales (client_id);
-CREATE INDEX idx_sales_biller  ON sales (biller_id);
+CREATE INDEX idx_sales_date ON sales (sale_date);
+CREATE INDEX idx_sales_client ON sales (client_id);
+CREATE INDEX idx_sales_biller ON sales (biller_id);
 
 CREATE TRIGGER update_sales_timestamp
 AFTER UPDATE ON sales
@@ -216,8 +216,9 @@ CREATE TABLE sale_items (
   tax_amount REAL DEFAULT 0.00,
   total_levies REAL GENERATED ALWAYS AS ((unit_price * quantity) * 0.05) VIRTUAL,
   subtotal REAL NOT NULL,
-  line_total REAL NOT NULL, -- subtotal - discount + tax
+  line_total REAL NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (sale_id) REFERENCES sales(sale_id) ON DELETE CASCADE,
   FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
@@ -257,15 +258,13 @@ CREATE TABLE purchases (
   FOREIGN KEY (created_by) REFERENCES users(username)
 );
 
--- Comprehensive indexes
-CREATE INDEX idx_purchase_date           ON purchases (purchase_date);
+CREATE INDEX idx_purchase_date ON purchases (purchase_date);
 CREATE INDEX idx_purchase_payment_status ON purchases (payment_status);
-CREATE INDEX idx_purchase_status         ON purchases (purchase_status);
-CREATE INDEX idx_purchase_invoice        ON purchases (purchase_invoice);
-CREATE INDEX idx_purchase_expected_date  ON purchases (expected_delivery_date);
-CREATE INDEX idx_purchase_received_date  ON purchases (date_received);
+CREATE INDEX idx_purchase_status ON purchases (purchase_status);
+CREATE INDEX idx_purchase_invoice ON purchases (purchase_invoice);
+CREATE INDEX idx_purchase_expected_date ON purchases (expected_delivery_date);
+CREATE INDEX idx_purchase_received_date ON purchases (date_received);
 
--- Update DATETIME trigger
 CREATE TRIGGER update_purchases_timestamp
 AFTER UPDATE ON purchases
 FOR EACH ROW
@@ -281,16 +280,15 @@ CREATE TABLE purchase_items (
   unit_cost REAL NOT NULL CHECK(unit_cost >= 0),
   subtotal REAL NOT NULL CHECK(subtotal >= 0),
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (purchase_id) REFERENCES purchases(purchase_id) ON DELETE CASCADE,
   FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
 
--- Comprehensive indexes
 CREATE INDEX idx_purchase_items_purchase ON purchase_items (purchase_id);
-CREATE INDEX idx_purchase_items_product  ON purchase_items (product_id);
-CREATE INDEX idx_purchase_items_created  ON purchase_items (created_at);
+CREATE INDEX idx_purchase_items_product ON purchase_items (product_id);
+CREATE INDEX idx_purchase_items_created ON purchase_items (created_at);
 
--- Update DATETIME trigger
 CREATE TRIGGER update_purchase_items_timestamp
 AFTER UPDATE ON purchase_items
 FOR EACH ROW
@@ -306,41 +304,41 @@ CREATE TABLE payments (
   payment_id INTEGER PRIMARY KEY AUTOINCREMENT,
   payment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
   transaction_type TEXT NOT NULL CHECK(transaction_type IN ('sale', 'purchase', 'refund', 'expense')) DEFAULT 'sale',
-  reference_id INTEGER NOT NULL, -- sale_id or purchase_id
+  reference_id INTEGER NOT NULL,
   amount REAL NOT NULL,
   payment_method TEXT NOT NULL CHECK(payment_method IN ('cash', 'momo', 'card', 'bank_transfer', 'cheque')) DEFAULT 'cash',
-  payment_reference TEXT, -- Bank/Momo reference number
-  momo_provider TEXT CHECK(momo_provider IS NULL OR momo_provider IN ('mtn', 'vodafone', 'airteltigo')), -- For Ghana Mobile Money
+  payment_reference TEXT,
+  momo_provider TEXT CHECK(momo_provider IS NULL OR momo_provider IN ('mtn', 'vodafone', 'airteltigo')),
   momo_number TEXT,
   notes TEXT,
-  processed_by TEXT NOT NULL, -- User who processed payment
+  processed_by TEXT NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (processed_by) REFERENCES users (username)
+  FOREIGN KEY (processed_by) REFERENCES users(username)
 );
 
 CREATE INDEX idx_transaction_type ON payments (transaction_type);
-CREATE INDEX idx_reference        ON payments (reference_id);
-CREATE INDEX idx_payment_date     ON payments (payment_date);
-CREATE INDEX idx_payments_method  ON payments (payment_method);
+CREATE INDEX idx_reference ON payments (reference_id);
+CREATE INDEX idx_payment_date ON payments (payment_date);
+CREATE INDEX idx_payments_method ON payments (payment_method);
 
 -- ============================================
 -- AUDIT & REPORTS
 -- ============================================
 
 CREATE TABLE audit_logs (
-    audit_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    action TEXT NOT NULL,
-    description TEXT,  -- Added: Store what actually changed
-    table_name TEXT,  -- Added: Which table was affected
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
+  audit_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  action TEXT NOT NULL,
+  description TEXT,
+  table_name TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
-CREATE INDEX idx_audit_logs_user       ON audit_logs (user_id);
-CREATE INDEX idx_audit_logs_action     ON audit_logs (action);
+CREATE INDEX idx_audit_logs_user ON audit_logs (user_id);
+CREATE INDEX idx_audit_logs_action ON audit_logs (action);
 CREATE INDEX idx_audit_logs_created_at ON audit_logs (created_at);
-CREATE INDEX idx_audit_logs_table      ON audit_logs (table_name);  -- Added
+CREATE INDEX idx_audit_logs_table ON audit_logs (table_name);
 
 CREATE TABLE reports (
   report_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -349,7 +347,7 @@ CREATE TABLE reports (
   generated_by INTEGER NOT NULL,
   start_date DATE,
   end_date DATE,
-  filters TEXT, -- Store report parameters
+  filters TEXT,
   file_path TEXT,
   file_format TEXT NOT NULL CHECK(file_format IN ('pdf', 'excel', 'csv')) DEFAULT 'pdf',
   status TEXT NOT NULL CHECK(status IN ('pending', 'completed', 'failed')) DEFAULT 'pending',
@@ -357,6 +355,6 @@ CREATE TABLE reports (
   FOREIGN KEY (generated_by) REFERENCES users(user_id)
 );
 
-CREATE INDEX idx_reports_type   ON reports (report_type);
-CREATE INDEX idx_generated_by   ON reports (generated_by);
-CREATE INDEX idx_reports_status ON reports (status);  
+CREATE INDEX idx_reports_type ON reports (report_type);
+CREATE INDEX idx_generated_by ON reports (generated_by);
+CREATE INDEX idx_reports_status ON reports (status);
