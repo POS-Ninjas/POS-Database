@@ -779,7 +779,6 @@ class ProductRepository:
         
         print(f"✅ Successfully inserted {len(products)} products")
 
-
 class SaleRepository:
     def __init__(self, db_context: DatabaseContext):
         self.db = db_context
@@ -973,7 +972,6 @@ class SaleRepository:
         
         print(f"✅ Successfully inserted {len(sales)} sales")
     
-
 class SaleItemRepository:
     def __init__(self, db_context: DatabaseContext):
         self.db = db_context
