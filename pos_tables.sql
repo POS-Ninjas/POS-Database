@@ -335,10 +335,10 @@ CREATE TABLE audit_logs (
   FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
-CREATE INDEX idx_audit_logs_user ON audit_logs (user_id);
-CREATE INDEX idx_audit_logs_action ON audit_logs (action);
+CREATE INDEX idx_audit_logs_user       ON audit_logs (user_id);
+CREATE INDEX idx_audit_logs_action     ON audit_logs (action);
 CREATE INDEX idx_audit_logs_created_at ON audit_logs (created_at);
-CREATE INDEX idx_audit_logs_table ON audit_logs (table_name);
+CREATE INDEX idx_audit_logs_table      ON audit_logs (table_name);
 
 CREATE TABLE reports (
   report_id INTEGER PRIMARY KEY AUTOINCREMENT,
