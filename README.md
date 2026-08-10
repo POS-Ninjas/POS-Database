@@ -9,6 +9,7 @@ Entity Relationship Diagram - https://app.eraser.io/workspace/KiwSBuHQFKW3zvTylD
 - **Test Data** — Python scripts to generate realistic fake data at scale
 - **Queries** — Sample queries for common POS operations
 
+
 ## Quick Start
 
 ### 1. Set Up the Database
@@ -36,6 +37,8 @@ python main.py  # Populates database with synthetic transactions
 cat queries.sql
 ```
 
+<img width="1818" height="936" alt="image" src="https://github.com/user-attachments/assets/fd0e56bd-2817-4b89-a5e8-80f1154e9816" />
+
 ## Schema
 
 See the **[Entity Relationship Diagram](https://app.eraser.io/workspace/KiwSBuHQFKW3zvTylDfh)** for full data model.
@@ -57,4 +60,4 @@ See the **[Entity Relationship Diagram](https://app.eraser.io/workspace/KiwSBuHQ
 
 MIT
 
-<img width="1818" height="936" alt="image" src="https://github.com/user-attachments/assets/fd0e56bd-2817-4b89-a5e8-80f1154e9816" />
+
